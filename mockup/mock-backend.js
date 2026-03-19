@@ -1,53 +1,195 @@
-// Simple mocked backend using localStorage for POC
-const MockBackend = (function(){
-  const KEY = 'poc_bi_rules_v1';
-  function _loadAll(){
-    const raw = localStorage.getItem(KEY);
-    if(!raw) {
-      const demo = { rules: [demoRule()] };
-      localStorage.setItem(KEY, JSON.stringify(demo));
-      return demo;
+// mock-backend.js – angepasst an dunklen NagVis-Style mit Status-Farben
+// Verwendet localStorage für Persistenz (POC)
+
+const MockBackend = (function () {
+  const STORAGE_KEY = 'ui4bi_rules_v2026';
+
+  function _loadData() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      const initialData = { rules: [createDemoRule()], lastId: 1 };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
+      return initialData;
     }
     return JSON.parse(raw);
   }
-  function _saveAll(data){ localStorage.setItem(KEY, JSON.stringify(data)); }
 
-  function demoRule(){
+  function _saveData(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function createDemoRule() {
     return {
-      id: 'bp-001',
-      title: 'Payment Platform',
-      description: 'POC example',
+      id: 'rule-001',
+      title: 'Kritischer Zahlungsfluss',
+      description: 'Überwachung der wichtigsten Zahlungskomponenten (POC Demo)',
       active: true,
       version: 1,
+      created_at: new Date().toISOString(),
+      created_by: 'demo-user',
       nodes: [
-        { id: 'n1', label: 'Payment', selector: 'hostA:pay', type: 'service', x:120,y:80,w:160,h:56,color:'#ffd54f', states:['CRITICAL'], aggregation:'majority' },
-        { id: 'n2', label: 'DB', selector: 'hostB:postgres', type:'service', x:420,y:80,w:140,h:56,color:'#90caf9', states:['CRITICAL'], aggregation:'majority' }
+        {
+          id: 'n-host-payment',
+          label: 'Payment Gateway',
+          selector: 'host:payment-gw-prod',
+          type: 'host',
+          x: 180,
+          y: 120,
+          w: 180,
+          h: 64,
+          status: 'ok',           // ← jetzt Status statt states-Array
+          color: '',              // leer → CSS übernimmt
+          aggregation: 'worst'
+        },
+        {
+          id: 'n-svc-visa',
+          label: 'Visa Processor',
+          selector: 'host:payment-gw-prod::visa',
+          type: 'service',
+          x: 480,
+          y: 80,
+          w: 160,
+          h: 56,
+          status: 'warning',
+          color: '',
+          aggregation: 'majority'
+        },
+        {
+          id: 'n-svc-mastercard',
+          label: 'Mastercard Processor',
+          selector: 'host:payment-gw-prod::mastercard',
+          type: 'service',
+          x: 480,
+          y: 180,
+          w: 160,
+          h: 56,
+          status: 'ok',
+          color: '',
+          aggregation: 'majority'
+        },
+        {
+          id: 'n-db',
+          label: 'Payment Database',
+          selector: 'host:db-prod::mysql_payments',
+          type: 'service',
+          x: 820,
+          y: 140,
+          w: 160,
+          h: 56,
+          status: 'critical',
+          color: '',
+          aggregation: 'worst'
+        },
+        {
+          id: 'n-cache',
+          label: 'Redis Cache',
+          selector: 'host:cache-prod::redis_6379',
+          type: 'service',
+          x: 820,
+          y: 260,
+          w: 140,
+          h: 56,
+          status: 'downtime',
+          color: '',
+          aggregation: 'any'
+        }
       ],
       edges: [
-        { id:'e1', sourceId:'n1', targetId:'n2', waypoints:[], operator:'AND' }
+        {
+          id: 'e1',
+          sourceId: 'n-host-payment',
+          targetId: 'n-svc-visa',
+          waypoints: [],
+          operator: 'DEPENDS_ON'
+        },
+        {
+          id: 'e2',
+          sourceId: 'n-host-payment',
+          targetId: 'n-svc-mastercard',
+          waypoints: [],
+          operator: 'DEPENDS_ON'
+        },
+        {
+          id: 'e3',
+          sourceId: 'n-svc-visa',
+          targetId: 'n-db',
+          waypoints: [{ x: 620, y: 100 }],
+          operator: 'REQUIRES'
+        },
+        {
+          id: 'e4',
+          sourceId: 'n-svc-mastercard',
+          targetId: 'n-db',
+          waypoints: [{ x: 620, y: 200 }],
+          operator: 'REQUIRES'
+        },
+        {
+          id: 'e5',
+          sourceId: 'n-db',
+          targetId: 'n-cache',
+          waypoints: [],
+          operator: 'AFFECTS'
+        }
       ],
-      ui_meta: { created_by:'poc', created_at: new Date().toISOString()}
+      ui_meta: {
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        lastEdited: new Date().toISOString()
+      }
     };
   }
 
   return {
-    listRules: async function(){ return _loadAll().rules; },
-    getRule: async function(id){
-      return _loadAll().rules.find(r=>r.id===id) || null;
+    listRules: async function () {
+      return _loadData().rules;
     },
-    createOrUpdateRule: async function(rule){
-      const data = _loadAll();
-      const idx = data.rules.findIndex(r=>r.id===rule.id);
-      if(idx>=0){ rule.version = (data.rules[idx].version||1)+1; data.rules[idx]=rule; }
-      else { rule.version = 1; data.rules.push(rule); }
+
+    getRule: async function (id) {
+      return _loadData().rules.find(r => r.id === id) || null;
+    },
+
+    createOrUpdateRule: async function (rule) {
+      const data = _loadData();
+      const existingIndex = data.rules.findIndex(r => r.id === rule.id);
+
+      if (existingIndex >= 0) {
+        rule.version = (data.rules[existingIndex].version || 1) + 1;
+        rule.lastEdited = new Date().toISOString();
+        data.rules[existingIndex] = rule;
+      } else {
+        rule.id = rule.id || `rule-${String(data.lastId || 1).padStart(3, '0')}`;
+        rule.version = 1;
+        rule.created_at = new Date().toISOString();
+        data.rules.push(rule);
+        data.lastId = (data.lastId || 1) + 1;
+      }
+
       _saveAll(data);
       return rule;
     },
-    deleteRule: async function(id){
-      const data = _loadAll();
-      data.rules = data.rules.filter(r=>r.id!==id);
-      _saveAll(data);
-      return true;
+
+    deleteRule: async function (id) {
+      const data = _loadData();
+      const beforeCount = data.rules.length;
+      data.rules = data.rules.filter(r => r.id !== id);
+      _saveData(data);
+      return data.rules.length < beforeCount;
+    },
+
+    // Hilfsfunktion – falls du mal schnell eine neue leere Regel brauchst
+    createEmptyRule: function (title = 'Neue Regel') {
+      return {
+        id: null, // wird beim Speichern generiert
+        title,
+        description: '',
+        active: true,
+        version: 1,
+        created_at: new Date().toISOString(),
+        nodes: [],
+        edges: [],
+        ui_meta: {}
+      };
     }
   };
 })();
