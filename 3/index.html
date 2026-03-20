@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UI4BI – Visual BI Editor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    #canvas {
+      background-image:
+        linear-gradient(#33333322 1px, transparent 1px),
+        linear-gradient(90deg, #33333322 1px, transparent 1px);
+      background-size: 20px 20px;
+      background-color: #1a1a1a;
+    }
+  </style>
+</head>
+<body class="bg-[#1a1a1a] text-gray-100 h-screen flex flex-col overflow-hidden font-sans">
+
+  <!-- Toolbar -->
+  <header class="bg-[#1e1e1e] border-b border-[#3a3a3a] h-12 flex items-center px-4 relative z-10">
+    <div class="flex items-center gap-3">
+      <!-- Logo (dein SVG) -->
+      <svg width="140" height="36" viewBox="0 0 160 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Hier dein SVG-Code aus dem Prompt einfügen -->
+        <g id="icon-aggregator">...</g>
+        <g id="text-ui4bi">...</g>
+        <text x="45" y="38" font-family="sans-serif" font-size="9" fill="#666666" font-style="italic">Visual Aggregator</text>
+      </svg>
+      <span class="text-lg font-bold text-white">UI4BI</span>
+    </div>
+
+    <div class="ml-auto flex items-center gap-3">
+      <div class="bg-[#2b2b2b] border border-[#444444] rounded px-3 py-1 text-sm flex items-center gap-2">
+        <button id="zoom-out" class="hover:text-green-400">−</button>
+        <span id="zoom-level" class="w-16 text-center">100%</span>
+        <button id="zoom-in"  class="hover:text-green-400">+</button>
+      </div>
+      <button id="pan-btn" class="bg-[#2b2b2b] border border-[#444444] rounded w-9 h-9 flex items-center justify-center text-lg hover:bg-[#3a3a3a]">
+        🖐️
+      </button>
+      <button class="bg-[#333333] border border-[#444444] rounded w-9 h-9 flex items-center justify-center text-lg hover:bg-[#444444]">
+        ☰
+      </button>
+    </div>
+  </header>
+
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Linke Sidebar -->
+    <aside class="w-72 bg-[#242424] border-r border-[#3a3a3a] flex flex-col">
+      <div class="p-3 border-b border-[#3a3a3a]">
+        <h3 class="text-white text-xs font-bold uppercase tracking-wide">Palette / Legend</h3>
+      </div>
+      <div class="p-4 space-y-3 flex-1 overflow-y-auto">
+        <div draggable="true" data-type="aggregator" class="bg-[#2b2b2b] border-2 border-[#13d38e] rounded-md p-3 text-center text-sm cursor-grab hover:bg-[#333333]">
+          BI Aggregator
+        </div>
+        <div draggable="true" data-type="host" class="bg-[#2b2b2b] border-2 border-[#A5D6A7] rounded p-3 text-center text-sm cursor-grab hover:bg-[#333333]">
+          Host (Process)
+        </div>
+        <div draggable="true" data-type="service" class="bg-[#2b2b2b] border-2 border-[#90A4AE] rounded-md p-3 text-center text-sm cursor-grab hover:bg-[#333333] italic">
+          Service
+        </div>
+      </div>
+
+      <div class="p-3 border-t border-[#3a3a3a]">
+        <h3 class="text-white text-xs font-bold uppercase tracking-wide mb-2">BI Collections / Tree</h3>
+        <ul class="text-sm space-y-1">
+          <li class="flex items-center gap-2 text-gray-300"><i data-lucide="folder" class="w-4 h-4"></i> Business Processes</li>
+          <li class="flex items-center gap-2 ml-5 text-[#13d38e] font-medium"><i data-lucide="file-text" class="w-4 h-4"></i> Payment Platform</li>
+          <li class="flex items-center gap-2 text-gray-300"><i data-lucide="folder" class="w-4 h-4"></i> Infrastructure</li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Canvas -->
+    <main class="flex-1 relative overflow-hidden">
+      <div id="canvas" class="absolute inset-0 origin-top-left transition-transform duration-100"></div>
+    </main>
+
+    <!-- Rechte Sidebar -->
+    <aside class="w-80 bg-[#242424] border-l border-[#3a3a3a] flex flex-col">
+      <div class="p-3 border-b border-[#3a3a3a]">
+        <h3 class="text-white text-xs font-bold uppercase tracking-wide">Search</h3>
+      </div>
+      <div class="p-4">
+        <div class="relative">
+          <input type="text" placeholder="🔎 host, service..." class="w-full bg-[#1a1a1a] border border-[#444444] rounded px-3 py-2 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-[#13d38e]">
+        </div>
+      </div>
+
+      <div class="p-3 border-t border-[#3a3a3a]">
+        <h3 class="text-white text-xs font-bold uppercase tracking-wide">Properties</h3>
+      </div>
+      <div id="inspector" class="p-4 text-sm hidden">
+        <!-- Dynamisch gefüllt -->
+      </div>
+      <div id="no-selection" class="p-4 text-gray-500 text-sm">
+        Kein Element ausgewählt
+      </div>
+    </aside>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
