@@ -163,7 +163,7 @@ Notes:
 - assets/icons/
 - tests/
 
-18) Wichtige Designentscheidungen (Empfehlung)
+18) Wichtige Designentscheidungen:
 - Implement as integrated CMK plugin when possible (native CMK API access, simpler auth), otherwise separate service with secured communications.
 - Persist UI layout/metadata as JSON files under /var/lib/check_mk/bi_ui/ for simplicity and backup.
 - Use optimistic locking and preview/dry‑run to avoid accidental production rule changes.
@@ -224,14 +224,13 @@ function endDrag(){
   window.removeEventListener('mouseup', endDrag);
 }
 
-Entscheidungspunkte für dich
+Entscheidungspunkte:
 - Integration: CMK plugin vs. separate service? Empfehlung: CMK plugin for native API access.
 - UI metadata storage: filesystem (/var/lib/check_mk/bi_ui/) recommended.
 - Routing algorithm: simple orthogonal by default; allow manual waypoints.
 
-Nächste konkrete Schritte 
+Nächste konkrete Schritte: 
 - Erzeuge lauffähiges POC‑Skeleton (index.html, main.js, styles.css) mit mocked backend.
 - Erzeuge JSON‑Schema für UI‑Rule‑Format und vollständige Mapping‑Tabelle (Thruk → CMK BI).
 - Erstelle Adapter‑Skizzen zur Konvertierung UI JSON → CMK BI rule format (Python).
 
-Möchtest du direkt das POC‑Skeleton (index.html + main.js + styles.css, mocked backend) haben?
