@@ -39,6 +39,18 @@ export function getEdgePoint(node, targetNode) {
   return getEdgePointToTarget(node, targetNode.x + tw / 2, targetNode.y + th / 2);
 }
 
+// ── Port-Position (absolut im Canvas) ────────────────────────────────────
+export function getPortPoint(node, port) {
+  const { w, h } = getNodeSize(node);
+  switch (port) {
+    case 'top':    return { x: node.x + w / 2, y: node.y };
+    case 'right':  return { x: node.x + w,     y: node.y + h / 2 };
+    case 'bottom': return { x: node.x + w / 2, y: node.y + h };
+    case 'left':   return { x: node.x,         y: node.y + h / 2 };
+    default:       return { x: node.x + w / 2, y: node.y + h / 2 };
+  }
+}
+
 // ── Bézier-Punkt bei t ────────────────────────────────────────────────────
 export function bezierPoint(t, p0, p1, p2, p3) {
   const mt = 1 - t;

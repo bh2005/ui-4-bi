@@ -1,3 +1,35 @@
+## 2026-03-31 - Phase 1: Interaktions-Polish
+
+### Issue 4: Connect-Modus verbessern
+- Tooltip-Banner erscheint beim Aktivieren des Connect-Modus
+- Rechtsklick auf Canvas bricht Connect-Modus sauber ab
+- Canvas erhaelt Klasse 'connect-active' fuer CSS-Port-Dot-Sichtbarkeit
+
+### Issue 2: Inspector ausbauen
+- Farb-Picker (native color-input) im Node-Inspector, aktualisiert Node-Farbe live
+- Autocomplete-Feld fuer Host/Service mit Mock-Daten via HTML datalist
+- Routing-Toggle (Gerade/Bezier) direkt im Edge-Inspector
+- Layer-Selector im Node-Inspector zur direkten Layer-Zuweisung
+
+### Issue 3: Layers-UI
+- Layers-Panel in der linken Sidebar (unter BI Collections)
+- Layer hinzufuegen per Plus-Button (Name via Prompt)
+- Layer per Auge-Icon ein-/ausblenden
+- Layer per Schloss-Icon sperren (gesperrte Nodes nicht verschiebbar)
+- Layer loeschen per Hover-Button
+- Layer-Zuweisung im Node-Inspector (Select-Feld)
+
+### Issue 1: Ports
+- 4 Port-Dots (top/right/bottom/left) an jedem Node
+- Port-Dots sichtbar bei Node-Hover oder im Connect-Modus
+- Port-Drag: von Port zu Port/Node ziehen erstellt Verbindung
+- Gestrichelte Preview-Linie im Edge-SVG waehrend des Drag
+- Edge speichert fromPort und toPort
+- buildEdgePath nutzt getPortPoint() wenn Ports gesetzt
+- Gesperrte Layer blockieren Drag-Start
+- Neue Datei: src/js/ui/layers-ui.js
+
+
 CMK BI Visual Editor – Changelog
 =================================
 

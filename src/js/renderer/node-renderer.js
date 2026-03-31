@@ -4,6 +4,8 @@ import { pushHistory, selectNode, selectEdge, toggleMultiSelect,
          clearNodeHighlights, enterConnectMode, logAudit, exitConnectMode,
          deleteSelected } from '../core/actions.js';
 import { scheduleRedrawEdges } from './renderer.js';
+import { edgeSvg } from './edge-renderer.js';
+import { getPortPoint } from '../utils/geometry.js';
 import { openNodeCtxMenu } from '../ui/context-menu.js';
 
 // ── DOM-Pool ──────────────────────────────────────────────────────────────
@@ -47,6 +49,20 @@ export function createNodeElement(node) {
     <div class="font-semibold node-label">${node.label}</div>
     ${node.aggType ? `<div class="text-xs opacity-80 mt-0.5 node-aggtype">(${node.aggType.toUpperCase()})</div>` : ''}
   `;
+
+  // ── Port-Dots ──────────────────────────────────────────────────────────
+  ['top', 'right', 'bottom', 'left'].forEach(port => {
+    const dot = document.createElement('div');
+    dot.className       = 'port-dot';
+    dot.dataset.port    = port;
+    dot.dataset.nodeId  = node.id;
+    dot.addEventListener('mousedown', e => {
+      e.stopPropagation();
+      e.preventDefault();
+      _startPortDrag(e, node, port);
+    });
+    el.appendChild(dot);
+  });
 
   el.addEventListener('click', e => {
     e.stopPropagation();
@@ -145,6 +161,8 @@ export function updateVisibility() {
   graphState.nodes.forEach(node => {
     const el = document.querySelector(`[data-id="${node.id}"]`);
     if (!el) return;
+    const layer = node.layerId ? graphState.layers.find(l => l.id === node.layerId) : null;
+    if (layer && !layer.visible) { el.style.display = 'none'; return; }
     const inView = node.x+160 >= vp.x1 && node.x <= vp.x2 && node.y+80 >= vp.y1 && node.y <= vp.y2;
     el.style.display = inView ? '' : 'none';
   });
@@ -153,4 +171,63 @@ export function updateVisibility() {
 export function updateNodeEl(node) {
   const el = document.querySelector(`[data-id="${node.id}"]`);
   if (el) { el.style.left = node.x + 'px'; el.style.top = node.y + 'px'; }
+}
+
+// ── Port-Drag: Verbindung per Ziehen von Port zu Port erstellen ───────────
+function _startPortDrag(startEvt, fromNode, fromPort) {
+  const tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  tempLine.setAttribute('stroke', '#13d38e');
+  tempLine.setAttribute('stroke-width', '2');
+  tempLine.setAttribute('stroke-dasharray', '6,3');
+  tempLine.style.pointerEvents = 'none';
+  edgeSvg.appendChild(tempLine);
+
+  const toCanvasCoords = (clientX, clientY) => {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left - state.panX) / state.zoomLevel,
+      y: (clientY - rect.top  - state.panY) / state.zoomLevel,
+    };
+  };
+
+  const startPos = getPortPoint(fromNode, fromPort);
+  tempLine.setAttribute('x1', startPos.x);
+  tempLine.setAttribute('y1', startPos.y);
+  tempLine.setAttribute('x2', startPos.x);
+  tempLine.setAttribute('y2', startPos.y);
+
+  const move = e => {
+    const pos = toCanvasCoords(e.clientX, e.clientY);
+    tempLine.setAttribute('x2', pos.x);
+    tempLine.setAttribute('y2', pos.y);
+  };
+
+  const up = e => {
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('mouseup',   up);
+    if (edgeSvg.contains(tempLine)) edgeSvg.removeChild(tempLine);
+
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const portEl = el?.classList.contains('port-dot') ? el : null;
+    const nodeEl = portEl ? null : el?.closest('[data-id]');
+
+    let toNodeId = portEl ? parseInt(portEl.dataset.nodeId, 10)
+                 : nodeEl ? parseInt(nodeEl.dataset.id, 10) : null;
+    const toPort = portEl?.dataset.port ?? null;
+
+    if (!toNodeId || toNodeId === fromNode.id) return;
+    const exists = graphState.edges.some(ex => ex.from === fromNode.id && ex.to === toNodeId);
+    if (exists) return;
+
+    pushHistory();
+    const tn = graphState.nodes.find(n => n.id === toNodeId);
+    const edgeDef = { id: `e${Date.now()}`, from: fromNode.id, to: toNodeId, routing: 'straight', fromPort };
+    if (toPort) edgeDef.toPort = toPort;
+    graphState.edges.push(edgeDef);
+    logAudit('Verbindung erstellt', `${fromNode.label} (${fromPort}) → ${tn?.label}${toPort ? ` (${toPort})` : ''}`);
+    scheduleRedrawEdges();
+  };
+
+  document.addEventListener('mousemove', move);
+  document.addEventListener('mouseup',   up);
 }

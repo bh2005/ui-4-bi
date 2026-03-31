@@ -1,5 +1,5 @@
 // ── Graph-Daten ───────────────────────────────────────────────────────────
-export const graphState = { nodes: [], edges: [], nextId: 1 };
+export const graphState = { nodes: [], edges: [], nextId: 1, layers: [] };
 export const history    = { past: [], future: [] };
 export const multiSelect = new Set();   // stores node IDs
 export const auditLog    = [];
@@ -8,7 +8,8 @@ export const auditLog    = [];
 export const state = {
   selectedNode:   null,
   selectedEdge:   null,
-  connectingFrom: null,
+  connectingFrom:     null,
+  connectingFromPort: null,
   zoomLevel:      1,
   panX:           0,
   panY:           0,

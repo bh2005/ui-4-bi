@@ -6,24 +6,7 @@
 
 ## Aktuell (Phase 1 – Interaktions-Polish)
 
-- [ ] **Ports** — 4 kleine Port-Punkte an den Node-Seiten (oben/rechts/unten/links)
-  - Hover-Highlight wenn Connect-Modus aktiv
-  - Drag startet nur von Port, landet nur auf Port
-  - Kante merkt sich Quell- und Ziel-Port (`edge.fromPort`, `edge.toPort`)
-
-- [ ] **Inspector ausbauen**
-  - Selector-Feld für Host/Service mit Autocomplete (erstmal Mock-Daten)
-  - Farb-Picker pro Node
-  - Edge: Routing-Toggle direkt im Inspector (nicht nur Kontextmenü)
-
-- [ ] **Layers-UI**
-  - Layer-Liste in Sidebar oder Toolbar
-  - Node kann Layer zugewiesen werden
-  - Layer togglen (sichtbar / unsichtbar) und locken
-
-- [ ] **Connect-Modus verbessern**
-  - Tooltip „Klicke Ziel-Node" während Connect-Modus aktiv
-  - Abbrechen auch per Rechtsklick
+alle Issues erledigt → siehe Erledigt-Liste unten
 
 ---
 
@@ -65,3 +48,7 @@
 - [x] Benutzername / User-Badge
 - [x] ES-Modul-Refactoring (19 Module, kein Build-Tool)
 - [x] `3/` → `src/` umbenannt, alte Scaffolds entfernt
+- [x] Ports (4 Port-Dots, Port-Drag, fromPort/toPort in Edge)
+- [x] Inspector ausbauen (Farb-Picker, Autocomplete, Routing-Toggle, Layer-Select)
+- [x] Layers-UI (Layer-Liste, toggle/lock, Node-Zuweisung)
+- [x] Connect-Modus verbessern (Tooltip, Rechtsklick-Abbrechen)
