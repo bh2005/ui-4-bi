@@ -99,6 +99,41 @@
     .state-WARNING  { background: #ca8a04; color: #fff; }
     .state-CRITICAL { background: #dc2626; color: #fff; }
     .state-UNKNOWN  { background: #6b7280; color: #fff; }
+
+    /* ── Port-Dots ─────────────────────────────────────────────────────── */
+    .port-dot {
+      position: absolute;
+      width: 10px; height: 10px;
+      background: #13d38e;
+      border: 2px solid #1a1a1a;
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.12s;
+      cursor: crosshair;
+      z-index: 20;
+      pointer-events: all;
+    }
+    [data-id]:hover .port-dot,
+    #canvas.connect-active [data-id] .port-dot { opacity: 1; }
+    .port-dot[data-port="top"]    { top: -5px; left: 50%; transform: translateX(-50%); }
+    .port-dot[data-port="right"]  { right: -5px; top: 50%; transform: translateY(-50%); }
+    .port-dot[data-port="bottom"] { bottom: -5px; left: 50%; transform: translateX(-50%); }
+    .port-dot[data-port="left"]   { left: -5px; top: 50%; transform: translateY(-50%); }
+
+    /* ── Connect-Tooltip ───────────────────────────────────────────────── */
+    #connect-tooltip {
+      display: none;
+      position: fixed;
+      bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #13d38e; color: #000;
+      font-size: 12px; font-weight: 600;
+      padding: 7px 18px; border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.5);
+      z-index: 90000;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #connect-tooltip.visible { display: block; }
   </style>
 </head>
 <body class="bg-[#1a1a1a] text-gray-100 h-screen flex flex-col overflow-hidden font-sans">
@@ -267,6 +302,18 @@
           <li class="flex items-center gap-2 text-gray-300"><i data-lucide="folder" class="w-4 h-4"></i> Infrastructure</li>
         </ul>
       </div>
+
+      <!-- Layers Panel -->
+      <div class="border-t border-[#3a3a3a]">
+        <div class="p-3 flex items-center justify-between">
+          <h3 class="text-white text-xs font-bold uppercase tracking-wide">Layers</h3>
+          <button id="btn-add-layer" title="Layer hinzufügen"
+            class="text-gray-400 hover:text-[#13d38e] w-6 h-6 flex items-center justify-center rounded transition">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <div id="layers-list" class="px-3 pb-3 space-y-0.5 text-sm"></div>
+      </div>
     </aside>
 
     <!-- Canvas wrapper (for marquee + snaplines) -->
@@ -371,6 +418,9 @@
     box-shadow:0 8px 32px rgba(0,0,0,.6); padding:4px 0; min-width:200px;
     font-size:13px; color:#e5e7eb;">
   </div>
+
+  <!-- Connect-Modus Tooltip -->
+  <div id="connect-tooltip">Ziel-Port oder -Node anklicken &nbsp;|&nbsp; Rechtsklick = Abbrechen</div>
 
   <!-- main.js bleibt als Fallback erhalten; aktiv ist das ES-Modul -->
   <script type="module" src="js/app.js"></script>

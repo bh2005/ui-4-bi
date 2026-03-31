@@ -72,6 +72,15 @@ export function initMouseHandler() {
     item.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', item.dataset.type));
   });
 
+  // ── Rechtsklick auf Canvas → Connect-Modus abbrechen ─────────────────
+  canvas.addEventListener('contextmenu', e => {
+    if (state.connectingFrom !== null) {
+      e.preventDefault();
+      e.stopPropagation();
+      exitConnectMode();
+    }
+  });
+
   // ── Canvas-Klick → Auswahl aufheben ──────────────────────────────────
   canvas.addEventListener('click', e => {
     if (e.target === canvas || e.target.classList.contains('edge-layer') || e.target.tagName === 'svg') {

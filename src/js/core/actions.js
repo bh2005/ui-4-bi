@@ -180,16 +180,26 @@ export function alignNodes(type) {
 }
 
 // ── Connect-Modus ─────────────────────────────────────────────────────────
-export function enterConnectMode(fromId) {
-  state.connectingFrom = fromId;
+export function enterConnectMode(fromId, fromPort = null) {
+  state.connectingFrom     = fromId;
+  state.connectingFromPort = fromPort;
   const fromEl = document.querySelector(`[data-id="${fromId}"]`);
   if (fromEl) fromEl.classList.add('ring-green-400', 'animate-pulse', 'ring-offset-2', 'ring-offset-[#1a1a1a]');
-  document.getElementById('canvas').style.cursor = 'crosshair';
+  const canvas = document.getElementById('canvas');
+  canvas.style.cursor = 'crosshair';
+  canvas.classList.add('connect-active');
+  const tt = document.getElementById('connect-tooltip');
+  if (tt) tt.classList.add('visible');
 }
 
 export function exitConnectMode() {
-  state.connectingFrom = null;
-  document.getElementById('canvas').style.cursor = 'default';
+  state.connectingFrom     = null;
+  state.connectingFromPort = null;
+  const canvas = document.getElementById('canvas');
+  canvas.style.cursor = 'default';
+  canvas.classList.remove('connect-active');
+  const tt = document.getElementById('connect-tooltip');
+  if (tt) tt.classList.remove('visible');
   document.querySelectorAll('[data-id]').forEach(el =>
     el.classList.remove('ring-green-400', 'animate-pulse', 'scale-105')
   );

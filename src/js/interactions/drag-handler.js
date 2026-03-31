@@ -8,9 +8,15 @@ export function makeDraggable(el) {
   el.addEventListener('mousedown', evt => {
     if (evt.button !== 0 || state.connectingFrom !== null) return;
     if (evt.target.tagName === 'INPUT') return;
+    if (evt.target.classList.contains('port-dot')) return;
     evt.stopPropagation();
 
     const id = parseInt(el.dataset.id);
+    const _node = graphState.nodes.find(n => n.id === id);
+    if (_node?.layerId) {
+      const _layer = graphState.layers.find(l => l.id === _node.layerId);
+      if (_layer?.locked) return;
+    }
 
     if (!evt.shiftKey && !multiSelect.has(id)) {
       multiSelect.clear();

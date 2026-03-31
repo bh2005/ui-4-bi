@@ -1,5 +1,5 @@
 import { graphState, state, canvas } from '../core/state.js';
-import { getEdgePoint, getEdgePointToTarget, bezierPoint } from '../utils/geometry.js';
+import { getEdgePoint, getEdgePointToTarget, bezierPoint, getPortPoint } from '../utils/geometry.js';
 import { selectEdge } from '../core/actions.js';
 import { openEdgeCtxMenu } from '../ui/context-menu.js';
 
@@ -11,26 +11,30 @@ edgeSvg.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:
 
 // ── Pfad-Berechnung ────────────────────────────────────────────────────────
 export function buildEdgePath(edge, fromNode, toNode) {
+  // Port-Override: wenn Ports gesetzt, exakte Port-Position nutzen
+  const _pStart = edge.fromPort ? getPortPoint(fromNode, edge.fromPort) : null;
+  const _pEnd   = edge.toPort   ? getPortPoint(toNode,   edge.toPort)   : null;
+
   if (edge.routing === 'straight') {
     let start, end;
     if (edge.waypoints?.length > 0) {
       const firstWP = edge.waypoints[0];
       const lastWP  = edge.waypoints[edge.waypoints.length - 1];
-      start = getEdgePointToTarget(fromNode, firstWP.x, firstWP.y);
-      end   = getEdgePointToTarget(toNode,   lastWP.x,  lastWP.y);
+      start = _pStart || getEdgePointToTarget(fromNode, firstWP.x, firstWP.y);
+      end   = _pEnd   || getEdgePointToTarget(toNode,   lastWP.x,  lastWP.y);
       const pts = [start, ...edge.waypoints, end];
       const d   = 'M ' + pts.map(p => `${p.x},${p.y}`).join(' L ');
       return { d, start, end, cp1x: start.x, cp1y: start.y, cp2x: end.x, cp2y: end.y };
     }
-    start = getEdgePoint(fromNode, toNode);
-    end   = getEdgePoint(toNode,   fromNode);
+    start = _pStart || getEdgePoint(fromNode, toNode);
+    end   = _pEnd   || getEdgePoint(toNode,   fromNode);
     const d = `M ${start.x},${start.y} L ${end.x},${end.y}`;
     return { d, start, end, cp1x: start.x, cp1y: start.y, cp2x: end.x, cp2y: end.y };
   }
 
   // Bézier
-  const start = getEdgePoint(fromNode, toNode);
-  const end   = getEdgePoint(toNode,   fromNode);
+  const start = _pStart || getEdgePoint(fromNode, toNode);
+  const end   = _pEnd   || getEdgePoint(toNode,   fromNode);
   const dx    = end.x - start.x;
   const dy    = end.y - start.y;
   let offset  = Math.max(40, Math.hypot(dx, dy) * 0.35);

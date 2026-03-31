@@ -10,6 +10,7 @@ import { initMouseHandler } from './interactions/mouse-handler.js';
 import { initToolbar } from './ui/toolbar.js';
 import { initAuditUI, initPreviewUI, initUserBadge, showToast } from './ui/audit-ui.js';
 import { updateUndoRedoButtons, updateInspector } from './ui/inspector.js';
+import { initLayersUI } from './ui/layers-ui.js';
 import { canvas } from './core/state.js';
 
 // ── Audit-Log aus localStorage laden ─────────────────────────────────────
@@ -52,6 +53,7 @@ function init() {
   initAuditUI();
   initPreviewUI();
   initUserBadge();
+  initLayersUI();
 
   updateUndoRedoButtons();
   const zd = document.getElementById('zoom-level');
