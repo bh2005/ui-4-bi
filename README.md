@@ -1,38 +1,64 @@
-# ui-4-bi
+# CMK BI Visual Editor
 
-Ein Visio‑ähnlicher, browserbasierter Editor für Check_MK BI‑Regeln — Ziel ist ein produktiv nutzbarer Editor zum grafischen Erstellen, Bearbeiten, Validieren und Dry‑Runen von BI‑Regeln.
-
-Kurz: dieses Repository enthält das Frontend‑Scaffold für das MVP (Phase 1: Interaktions‑Polish — Ports, Inspector, Layers‑UI). Weitere Phasen sind in `next.md` beschrieben.
-
-## Inhalt dieses README
-- Übersicht & Ziel
-- Schnellstart (lokal)
-- Projektstruktur (Scaffold)
-- Phase‑1 Checklist (aktuelle Tasks)
-- Entwicklung / Contribution Guide
-- Branching & PR Workflow (Beispiele)
-- Hinweise / ToDos
-- Kontakt
+Browserbasierter, Visio-ähnlicher Editor zum grafischen Erstellen, Bearbeiten und Validieren von **Check_MK BI-Regeln** — kein Build-Tool, kein Framework, pure ES-Module.
 
 ---
 
-## Ziel & Scope
-Gesamtziel (MVP): Einen produktiv nutzbaren, Visio‑ähnlichen BI‑Editor liefern, der Check_MK BI‑Regeln visuell abbildet, bis ca. Ende April / Mitte Mai 2026 (siehe `next.md`).
+## Schnellstart
 
-Phase 1 (aktueller Fokus)
-- Ports: Port‑to‑Port Verbindungen, Hover/Drag Feedback
-- Inspector: Dynamischer Inspector mit Autocomplete (Mock)
-- Layers‑UI: Layer Liste, Sichtbarkeit & Locking
-Diese Phase liefert die grundlegende Interaktion und UX‑Fähigkeiten.
-
----
-
-## Schnellstart (lokal)
-Das Projekt ist statisch / clientseitig. Der einfachste Weg, die Demo lokal zu öffnen:
-
-1) Mit Python HTTP Server (empfohlen, schnell)
 ```sh
-# aus dem Repo-Root:
+cd src/
 python3 -m http.server 8000
-# im Browser öffnen:
-# http://localhost:8000/3/index.html
+# → http://localhost:8000
+```
+
+Oder mit dem FastAPI-Backend (Save / Validate / Audit):
+
+```sh
+cd src/
+pip install fastapi uvicorn
+uvicorn main:app --reload --port 8000
+```
+
+---
+
+## Projektstruktur
+
+```
+ui-4-bi/
+├── src/                        ← Anwendung
+│   ├── index.html
+│   ├── main.py                 ← FastAPI Backend
+│   ├── changelog.txt
+│   └── js/
+│       ├── app.js              ← Einstiegspunkt
+│       ├── core/               ← State, Actions, Konstanten
+│       ├── renderer/           ← Node-, Edge-, Grid-Rendering
+│       ├── interactions/       ← Mouse, Keyboard, Drag, Marquee
+│       ├── ui/                 ← Inspector, Toolbar, Kontextmenü, Audit
+│       └── utils/              ← Geometrie, DOM-Helpers
+├── docs/
+│   └── handbuch.md             ← Benutzerhandbuch
+├── FEATURES.md                 ← Feature-Übersicht & Roadmap
+├── todo.md                     ← Aktuelle Aufgaben
+└── README.md
+```
+
+---
+
+## Dokumentation
+
+| Dokument | Inhalt |
+|---|---|
+| [docs/handbuch.md](docs/handbuch.md) | Benutzerhandbuch (Bedienung, Shortcuts) |
+| [FEATURES.md](FEATURES.md) | Implementierte Features & Roadmap |
+| [todo.md](todo.md) | Aktuelle Entwicklungsaufgaben |
+| [src/changelog.txt](src/changelog.txt) | Änderungshistorie |
+
+---
+
+## Tech-Stack
+
+- **Frontend**: Vanilla JS, ES-Module, Tailwind CSS (CDN), Lucide Icons
+- **Backend**: Python / FastAPI
+- **Kein Build-Tool** — direkt im Browser lauffähig
