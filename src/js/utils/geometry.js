@@ -1,5 +1,4 @@
-import { state, SNAP_GRID } from '../core/state.js';
-import { SNAP_GRID as SG } from '../core/constants.js';
+import { state } from '../core/state.js';
 
 // ── Grid-Snap ─────────────────────────────────────────────────────────────
 export function snapToGrid(v) {
