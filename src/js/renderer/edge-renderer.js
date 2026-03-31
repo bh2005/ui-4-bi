@@ -122,7 +122,7 @@ export function redrawEdges(scheduleRedrawEdgesFn) {
     });
     Object.values(groups).forEach(ids => {
       if (ids.length < 2) return;
-      const step = 2.5, base = -((ids.length-1)*step)/2;
+      const step = 8, base = -((ids.length-1)*step)/2;
       ids.forEach((id,i) => { parallelOffset[id] = base + i*step; });
     });
   }

@@ -213,9 +213,9 @@ export function autoLayout(dir = state.layoutDir) {
     }
   });
 
-  // 7b. Parallele Gutter-Kanten staffeln
+  // 7b. Parallele Gutter-Kanten Y-staffeln (Kanten im selben Gutter auseinanderhalten)
   {
-    const STEP=2, byGutter=new Map();
+    const STEP=8, byGutter=new Map();
     graphState.edges.forEach(edge => {
       if (!edge.waypoints?.length) return;
       const key = dir==='LR' ? edge.waypoints[0].x : edge.waypoints[0].y;
@@ -232,6 +232,32 @@ export function autoLayout(dir = state.layoutDir) {
       group.forEach((edge,i) => {
         const o=Math.round(base+i*STEP);
         edge.waypoints=edge.waypoints.map(wp => dir==='LR'?{x:wp.x+o,y:wp.y}:{x:wp.x,y:wp.y+o});
+      });
+    });
+  }
+
+  // 7c. Fan-in X-Staffelung: Kanten die am selben Ziel-Node ankommen
+  //     erhalten verschiedene Eintrittspunkte → kein Überlappen am Ziel-Border
+  {
+    const FAN_SEP = 14;
+    const byTarget = {};
+    graphState.edges.forEach(edge => {
+      if (!edge.waypoints?.length) return;
+      if (!byTarget[edge.to]) byTarget[edge.to] = [];
+      byTarget[edge.to].push(edge);
+    });
+    Object.values(byTarget).forEach(group => {
+      if (group.length < 2) return;
+      group.sort((a,b) => {
+        const fa=graphState.nodes.find(n=>n.id===a.from), fb=graphState.nodes.find(n=>n.id===b.from);
+        return dir==='LR' ? (fa?.y??0)-(fb?.y??0) : (fa?.x??0)-(fb?.x??0);
+      });
+      const base = -((group.length-1)*FAN_SEP)/2;
+      group.forEach((edge, i) => {
+        const off = Math.round(base + i*FAN_SEP);
+        const last = edge.waypoints[edge.waypoints.length-1];
+        if (dir==='TB') last.x += off;
+        else             last.y += off;
       });
     });
   }
