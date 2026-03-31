@@ -1,0 +1,76 @@
+CMK BI Visual Editor – Changelog
+=================================
+
+2026-03-31  Refactoring: ES-Modul-Struktur (main.js aufgeteilt)
+            - main.js (2298 Zeilen) in 19 ES-Module aufgeteilt
+            - Neue Struktur: js/core/, js/renderer/, js/interactions/, js/ui/, js/utils/
+            - index.html lädt jetzt <script type="module" src="js/app.js">
+            - main.js bleibt als Fallback erhalten (wird nicht mehr geladen)
+
+            Neue Dateien:
+            - js/core/constants.js      aggregatorTypes, nodeTypes, LAYOUT, SNAP_GRID
+            - js/core/state.js          graphState, history, multiSelect, auditLog, state{}, DOM-Refs
+            - js/core/actions.js        undo, redo, pushHistory, selectNode, selectEdge,
+                                         toggleMultiSelect, deleteSelected, alignNodes,
+                                         enterConnectMode, exitConnectMode, logAudit
+            - js/utils/geometry.js      snapToGrid, getNodeSize, getEdgePoint,
+                                         getEdgePointToTarget, bezierPoint
+            - js/utils/dom-utils.js     escHtml
+            - js/renderer/renderer.js   scheduleRedrawEdges (RAF), fullRedraw, applyTransform
+            - js/renderer/node-renderer.js  createNodeElement, releaseNodeEl, acquireNodeEl,
+                                             startInlineEdit, updateVisibility, updateNodeEl
+            - js/renderer/edge-renderer.js  buildEdgePath, redrawEdges, edgeSvg, Waypoint-Drag
+            - js/renderer/grid-renderer.js  computeSnaplines, drawSnaplines, clearSnaplines
+            - js/interactions/drag-handler.js    makeDraggable
+            - js/interactions/connect-handler.js Canvas-Drop (Palette → Canvas)
+            - js/interactions/marquee-handler.js Marquee-Selection
+            - js/interactions/keyboard-handler.js Delete, Ctrl+Z/Y/S, Escape
+            - js/interactions/mouse-handler.js   Scroll-Zoom, Pan, Canvas-Klick
+            - js/ui/inspector.js        updateInspector, updateUndoRedoButtons
+            - js/ui/toolbar.js          saveGraph, validateGraph, exportJSON, importJSON,
+                                         snapAllToGrid, autoLayout, Layout-Dropdown
+            - js/ui/context-menu.js     showCtxMenu, openNodeCtxMenu, openEdgeCtxMenu
+            - js/ui/audit-ui.js         Audit-Modal, User-Badge, Toast, Preview-Modal
+            - js/app.js                 Haupt-Initialisierung, loadDemoGraph
+
+2026-03-31  Fixes & Features (vor Refactoring, in main.js)
+            - Zoom: Scroll-Wheel zoomt jetzt zur Mausposition hin (nicht mehr zur Ecke)
+            - Default-Linientyp: neue Kanten sind "gerade" (routing: 'straight')
+            - getEdgePoint: liest echte DOM-Dimensionen (offsetWidth/offsetHeight)
+              statt hardcodierter 140x50 → Connectoren treffen echte Node-Kanten
+            - autoLayout TD/LR: orthogonale Waypoints mit Gutter-Routing
+              (Kanten gehen durch den Abstand zwischen Layern, nicht durch Nodes)
+            - autoLayout Skip-Layer: Bypass-Route außerhalb des Layouts
+              (verhindert Durchschneiden von Zwischenlayern)
+            - autoLayout: Barycenter-Rückwärtslauf korrigiert (Nachfolger statt Vorgänger)
+            - Layout-Button: togglet TD ↔ LR per Hauptklick, Dropdown für GRID
+            - Layout-Button: zeigt aktuellen Modus als Label (↓ TD / → LR / ⊞ Grid)
+            - Parallele Kanten: min. 2px Abstand (senkrechter Versatz)
+
+2026-03-30  Auto-Layout
+            - Sugiyama-inspiriertes Hierarchie-Layout (Top→Bottom, Left→Right)
+            - Kreuzungsminimierung mit Barycenter-Heuristik (2 Durchläufe)
+            - Zentriertes Layer-Placement
+            - GRID-Modus: Alle Nodes am Raster ausrichten
+            - Animierte Übergänge (cubic-bezier, 350ms)
+            - Split-Button mit Dropdown (TB / LR / GRID)
+
+2026-03-29  Kontextmenü & Edge-Routing
+            - Rechtsklick auf Node: Label bearbeiten, Verbinden, Aggregation, Duplizieren, Löschen
+            - Rechtsklick auf Kante: Gebogen/Gerade umschalten, Waypoints zurücksetzen,
+              Richtung umkehren, Löschen
+            - edge.routing = 'straight' → gerade Linie mit L-Waypoints
+            - edge.routing = undefined  → Bézier-Kurve mit Kollisionserkennung
+
+2026-03-28  Performance (Phase 3A) + RBAC/Audit (Phase 3B)
+            - RAF-Throttling: scheduleRedrawEdges() bündelt Redraws per Animationsframe
+            - Viewport-Culling: Nodes außerhalb des Sichtbereichs werden ausgeblendet
+            - DOM-Pooling: _nodePool recycelt detached <div>-Elemente
+            - Persistent Edge-SVG: <svg> wird gecleared, nicht neu erstellt
+            - Audit-Log: in-memory + localStorage (100 Einträge), POST an /audit
+            - Audit-Modal: Suche, Filter, CSV-Export
+            - User-Badge: Name in localStorage, Popover zum Ändern
+
+2026-03-27  Phase 1 + 2: Multi-Select, Inline-Edit, Align/Distribute,
+            Waypoint-Editing, Grid-Snap, Snaplines, Preview-Modal,
+            Save/Validate, Import/Export, Undo/Redo
