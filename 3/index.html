@@ -35,10 +35,12 @@
     .wp-handle:active {
       cursor: grabbing;
     }
-    #btn-snap.snap-active {
-      background: #13d38e;
-      color: #000;
-      border-color: #13d38e;
+    /* Phase 3A: snap-active style */
+    #btn-snap.snap-active,
+    .snap-active {
+      background: #13d38e !important;
+      color: #000 !important;
+      border-color: #13d38e !important;
     }
     #preview-modal {
       display: none;
@@ -52,6 +54,47 @@
     #preview-modal.open {
       display: flex;
     }
+    /* Phase 3B: Audit modal */
+    #audit-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+    }
+    #audit-modal.open {
+      display: flex;
+    }
+    /* Phase 3B: User popover */
+    #user-popover {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      z-index: 20000;
+      min-width: 200px;
+    }
+    #user-badge {
+      position: relative;
+    }
+    /* Phase 3B: Username banner */
+    #username-banner {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50000;
+      background: #ca8a04;
+      color: #000;
+      padding: 8px 16px;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 500;
+    }
     .state-OK       { background: #16a34a; color: #fff; }
     .state-WARNING  { background: #ca8a04; color: #fff; }
     .state-CRITICAL { background: #dc2626; color: #fff; }
@@ -59,6 +102,18 @@
   </style>
 </head>
 <body class="bg-[#1a1a1a] text-gray-100 h-screen flex flex-col overflow-hidden font-sans">
+
+  <!-- Phase 3B: Username Banner (shown if no user set) -->
+  <div id="username-banner">
+    <span>Bitte gib deinen Benutzernamen ein:</span>
+    <input id="username-banner-input" type="text" placeholder="Benutzername…"
+      class="bg-white text-black rounded px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-[#13d38e]"
+      style="min-width:140px;" />
+    <button id="username-banner-save"
+      class="bg-[#1a1a1a] text-white text-xs font-semibold px-3 py-1 rounded hover:bg-[#333] transition">
+      Los
+    </button>
+  </div>
 
   <!-- Toolbar -->
   <header class="bg-[#1e1e1e] border-b border-[#3a3a3a] h-12 flex items-center px-4 relative z-10">
@@ -107,6 +162,33 @@
         <i data-lucide="download" class="w-4 h-4"></i>
       </button>
 
+      <!-- Auto Layout -->
+      <div class="relative flex" id="layout-btn-group">
+        <button id="btn-layout" title="Layout anwenden / TD↔LR toggeln"
+          class="bg-[#2b2b2b] border border-[#444444] rounded-l px-3 h-9 flex items-center gap-1.5 hover:bg-[#3a3a3a] transition text-xs font-semibold">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span id="layout-dir-label">↓ TD</span>
+        </button>
+        <button id="btn-layout-dir" title="Richtung wählen"
+          class="bg-[#2b2b2b] border border-[#444444] border-l-0 rounded-r px-2 h-9 flex items-center hover:bg-[#3a3a3a] transition">
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+        </button>
+        <div id="layout-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:9999;
+          background:#242424;border:1px solid #3a3a3a;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.5);
+          padding:4px 0;min-width:160px;">
+          <button data-dir="TB" class="layout-dir-btn w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-[#333]">
+            <i data-lucide="arrow-down" class="w-4 h-4 text-[#13d38e]"></i> Top → Bottom
+          </button>
+          <button data-dir="LR" class="layout-dir-btn w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-[#333]">
+            <i data-lucide="arrow-right" class="w-4 h-4 text-[#13d38e]"></i> Left → Right
+          </button>
+          <div style="height:1px;background:#3a3a3a;margin:4px 0;"></div>
+          <button data-dir="GRID" class="layout-dir-btn w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-[#333]">
+            <i data-lucide="grid" class="w-4 h-4 text-[#13d38e]"></i> Am Raster ausrichten
+          </button>
+        </div>
+      </div>
+
       <div class="w-px h-6 bg-[#444444]"></div>
 
       <!-- Grid Snap Toggle -->
@@ -121,7 +203,34 @@
         Preview
       </button>
 
+      <!-- Phase 3B: Audit Button -->
+      <button id="btn-audit" title="Audit-Log"
+        class="bg-[#2b2b2b] border border-[#444444] rounded w-9 h-9 flex items-center justify-center hover:bg-[#3a3a3a] transition">
+        <i data-lucide="clock" class="w-4 h-4"></i>
+      </button>
+
       <div class="w-px h-6 bg-[#444444]"></div>
+
+      <!-- Phase 3B: User Badge -->
+      <div id="user-badge" title="Benutzer ändern"
+        class="relative bg-[#2b2b2b] border border-[#444444] rounded px-2 h-9 flex items-center gap-1.5 cursor-pointer hover:bg-[#3a3a3a] transition select-none">
+        <i data-lucide="user" class="w-4 h-4 text-[#13d38e] flex-shrink-0"></i>
+        <span id="user-badge-name" class="text-xs text-gray-300 max-w-[80px] truncate">anonymous</span>
+
+        <!-- User Popover -->
+        <div id="user-popover" class="bg-[#2b2b2b] border border-[#444444] rounded-lg shadow-xl p-3">
+          <div class="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">Benutzer ändern</div>
+          <div class="flex gap-2">
+            <input id="user-popover-input" type="text" placeholder="Name…"
+              class="flex-1 bg-[#1a1a1a] border border-[#555] rounded px-2 py-1 text-sm text-white outline-none focus:border-[#13d38e]"
+              style="min-width:120px;" />
+            <button id="user-popover-save"
+              class="bg-[#13d38e] hover:bg-[#0fa678] text-black text-xs font-semibold px-3 py-1 rounded transition">
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Zoom -->
       <div class="bg-[#2b2b2b] border border-[#444444] rounded px-3 py-1 text-sm flex items-center gap-2">
@@ -203,6 +312,64 @@
         <div class="text-gray-500">Lade Vorschau…</div>
       </div>
     </div>
+  </div>
+
+  <!-- Phase 3B: Audit Modal -->
+  <div id="audit-modal">
+    <div class="bg-[#1e1e1e] border border-[#3a3a3a] rounded-xl shadow-2xl w-[820px] max-h-[80vh] flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 border-b border-[#3a3a3a]">
+        <div class="flex items-center gap-2">
+          <i data-lucide="clock" class="w-5 h-5 text-[#13d38e]"></i>
+          <h2 class="text-white font-bold text-base">Audit-Log</h2>
+        </div>
+        <button id="audit-close" class="text-gray-400 hover:text-white w-8 h-8 flex items-center justify-center rounded hover:bg-[#333]">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Filter row -->
+      <div class="flex items-center gap-3 px-4 py-3 border-b border-[#3a3a3a] flex-wrap">
+        <input id="audit-search" type="text" placeholder="Suchen…"
+          class="bg-[#1a1a1a] border border-[#444] rounded px-3 py-1.5 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-[#13d38e] flex-1 min-w-[160px]" />
+        <select id="audit-action-filter"
+          class="bg-[#1a1a1a] border border-[#444] rounded px-3 py-1.5 text-sm text-gray-300 focus:outline-none focus:border-[#13d38e]">
+          <option value="">Alle Aktionen</option>
+        </select>
+        <button id="audit-export-csv"
+          class="bg-[#2b2b2b] border border-[#444] hover:bg-[#3a3a3a] text-xs font-semibold px-3 py-1.5 rounded transition flex items-center gap-1.5">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          Export CSV
+        </button>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-y-auto flex-1">
+        <table class="w-full text-sm">
+          <thead class="sticky top-0 bg-[#1e1e1e]">
+            <tr class="border-b border-[#3a3a3a] text-gray-400 text-xs uppercase tracking-wide">
+              <th class="px-4 py-2 text-left whitespace-nowrap">Zeitpunkt</th>
+              <th class="px-4 py-2 text-left">Benutzer</th>
+              <th class="px-4 py-2 text-left">Aktion</th>
+              <th class="px-4 py-2 text-left">Details</th>
+            </tr>
+          </thead>
+          <tbody id="audit-tbody">
+            <tr>
+              <td colspan="4" class="px-4 py-6 text-center text-gray-500">Noch keine Einträge</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div id="ctx-menu" style="
+    display:none; position:fixed; z-index:99999;
+    background:#242424; border:1px solid #3a3a3a; border-radius:8px;
+    box-shadow:0 8px 32px rgba(0,0,0,.6); padding:4px 0; min-width:200px;
+    font-size:13px; color:#e5e7eb;">
   </div>
 
   <script src="main.js"></script>

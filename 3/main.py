@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import json
 from pathlib import Path
 from typing import List, Dict, Any
+from datetime import datetime
 
 app = FastAPI()
 
@@ -60,5 +61,19 @@ def validate_graph(graph: Graph):
     if count != len(node_ids):
         return {"valid": False, "message": "Zirkuläre Abhängigkeit erkannt!"}
     return {"valid": True, "message": "Alles in Ordnung"}
+
+# Phase 3B: Audit-Log Endpoint
+audit_entries: List[Dict[str, Any]] = []  # in-memory, max 1000
+
+@app.post("/audit")
+def post_audit(entry: dict):
+    audit_entries.insert(0, entry)
+    if len(audit_entries) > 1000:
+        audit_entries.pop()
+    return {"ok": True}
+
+@app.get("/audit")
+def get_audit():
+    return {"entries": audit_entries}
 
 # uvicorn main:app --reload
