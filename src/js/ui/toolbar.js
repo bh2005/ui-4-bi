@@ -5,13 +5,14 @@ import { scheduleRedrawEdges, fullRedraw } from '../renderer/renderer.js';
 import { snapToGrid } from '../utils/geometry.js';
 import { showToast } from './audit-ui.js';
 import { exportToCMK, importFromCMK } from '../utils/cmk-bi-converter.js';
+import { apiFetch } from '../core/auth.js';
 
 // ── Speichern ─────────────────────────────────────────────────────────────
 export async function saveGraph() {
   const btn = document.getElementById('btn-save');
   if (btn) { btn.disabled = true; btn.textContent = 'Speichern…'; }
   try {
-    const r = await fetch('/save', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    const r = await apiFetch('/save', { method: 'POST',
       body: JSON.stringify({ nodes: graphState.nodes, edges: graphState.edges }) });
     const j = await r.json();
     if (j.status === 'saved') logAudit('Graph gespeichert', `${graphState.nodes.length} Nodes, ${graphState.edges.length} Edges`);
@@ -29,7 +30,7 @@ async function validateGraph() {
   const btn = document.getElementById('btn-validate');
   if (btn) { btn.disabled = true; btn.textContent = 'Prüfe…'; }
   try {
-    const r = await fetch('/validate', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    const r = await apiFetch('/validate', { method: 'POST',
       body: JSON.stringify({ nodes: graphState.nodes, edges: graphState.edges }) });
     const j = await r.json();
     showToast((j.valid ? '✓ ' : '✗ ') + j.message, j.valid);

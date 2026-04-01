@@ -127,19 +127,13 @@
     #audit-modal.open {
       display: flex;
     }
-    /* Phase 3B: User popover */
-    #user-popover {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      z-index: 20000;
-      min-width: 200px;
+    /* Auth: Admin modal light theme */
+    html.light #admin-modal > div,
+    html.light #admin-form-overlay > div {
+      background: var(--c-panel) !important;
+      border-color: var(--c-border) !important;
     }
-    #user-badge {
-      position: relative;
-    }
-    /* Phase 3B: Username banner */
+    /* Auth: Username banner */
     #username-banner {
       display: none;
       position: fixed;
@@ -198,17 +192,8 @@
 </head>
 <body class="bg-[#1a1a1a] text-gray-100 h-screen flex flex-col overflow-hidden font-sans">
 
-  <!-- Phase 3B: Username Banner (shown if no user set) -->
-  <div id="username-banner">
-    <span>Bitte gib deinen Benutzernamen ein:</span>
-    <input id="username-banner-input" type="text" placeholder="Benutzername…"
-      class="bg-white text-black rounded px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-[#13d38e]"
-      style="min-width:140px;" />
-    <button id="username-banner-save"
-      class="bg-[#1a1a1a] text-white text-xs font-semibold px-3 py-1 rounded hover:bg-[#333] transition">
-      Los
-    </button>
-  </div>
+  <!-- Auth: Username Banner (legacy, hidden by default) -->
+  <div id="username-banner" style="display:none;"></div>
 
   <!-- Toolbar -->
   <header class="bg-[#1e1e1e] border-b border-[#3a3a3a] h-12 flex items-center px-4 relative z-10">
@@ -324,26 +309,25 @@
 
       <div class="w-px h-6 bg-[#444444]"></div>
 
-      <!-- Phase 3B: User Badge -->
-      <div id="user-badge" title="Benutzer ändern"
-        class="relative bg-[#2b2b2b] border border-[#444444] rounded px-2 h-9 flex items-center gap-1.5 cursor-pointer hover:bg-[#3a3a3a] transition select-none">
+      <!-- Admin Button (nur für Admins sichtbar) -->
+      <button id="btn-admin" title="Benutzerverwaltung" style="display:none;"
+        class="bg-[#2b2b2b] border border-[#444444] rounded w-9 h-9 flex items-center justify-center hover:bg-[#3a3a3a] transition">
+        <i data-lucide="shield" class="w-4 h-4 text-[#13d38e]"></i>
+      </button>
+
+      <!-- User Badge -->
+      <div id="user-badge"
+        class="relative bg-[#2b2b2b] border border-[#444444] rounded px-2 h-9 flex items-center gap-1.5 select-none">
         <i data-lucide="user" class="w-4 h-4 text-[#13d38e] flex-shrink-0"></i>
         <span id="user-badge-name" class="text-xs text-gray-300 max-w-[80px] truncate">anonymous</span>
-
-        <!-- User Popover -->
-        <div id="user-popover" class="bg-[#2b2b2b] border border-[#444444] rounded-lg shadow-xl p-3">
-          <div class="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">Benutzer ändern</div>
-          <div class="flex gap-2">
-            <input id="user-popover-input" type="text" placeholder="Name…"
-              class="flex-1 bg-[#1a1a1a] border border-[#555] rounded px-2 py-1 text-sm text-white outline-none focus:border-[#13d38e]"
-              style="min-width:120px;" />
-            <button id="user-popover-save"
-              class="bg-[#13d38e] hover:bg-[#0fa678] text-black text-xs font-semibold px-3 py-1 rounded transition">
-              OK
-            </button>
-          </div>
-        </div>
+        <span id="user-badge-role" class="text-xs ml-0.5"></span>
       </div>
+
+      <!-- Logout Button -->
+      <button id="btn-logout" title="Abmelden" style="display:none;"
+        class="bg-[#2b2b2b] border border-[#444444] rounded w-9 h-9 flex items-center justify-center hover:bg-[#3a3a3a] transition">
+        <i data-lucide="log-out" class="w-4 h-4 text-gray-400"></i>
+      </button>
 
       <!-- Zoom -->
       <div class="bg-[#2b2b2b] border border-[#444444] rounded px-3 py-1 text-sm flex items-center gap-2">

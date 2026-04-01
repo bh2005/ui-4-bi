@@ -3,28 +3,38 @@ import { aggregatorTypes } from '../core/constants.js';
 import { deleteSelected, alignNodes, enterConnectMode } from '../core/actions.js';
 import { scheduleRedrawEdges } from '../renderer/renderer.js';
 
-// ── Mock-Daten für Autocomplete ───────────────────────────────────────────
-const MOCK_HOSTS = [
-  'web-prod-01', 'web-prod-02', 'db-master', 'db-replica',
-  'app-server-01', 'app-server-02', 'redis-01', 'lb-frontend',
-  'monitoring-01', 'backup-server', 'mail-relay', 'vpn-gateway',
-];
-const MOCK_SERVICES = [
-  'HTTP Check', 'Ping', 'CPU Load', 'Memory', 'Disk Usage',
-  'SSH', 'HTTPS Certificate', 'Database Connection', 'NTP', 'SNMP',
-];
-const MOCK_HOSTGROUPS = [
-  'Linux Servers', 'Windows Servers', 'Network Devices',
-  'Storage Systems', 'Virtualization Hosts', 'DMZ Hosts',
-];
-const MOCK_SERVICEGROUPS = [
-  'HTTP Services', 'Database Services', 'Monitoring Services',
-  'Backup Services', 'Security Services',
-];
-const MOCK_BI = [
-  'my_bi_collection', 'infrastructure', 'frontend_stack',
-  'database_cluster', 'payment_platform',
-];
+// ── Autocomplete-Cache (API oder Mock) ───────────────────────────────────
+const _cache = {};
+
+async function _fetchSuggestions(endpoint, mockData) {
+  if (_cache[endpoint]) return _cache[endpoint];
+  try {
+    const r = await fetch(endpoint, { signal: AbortSignal.timeout(3000) });
+    if (r.ok) {
+      const j = await r.json();
+      _cache[endpoint] = j.items || mockData;
+      return _cache[endpoint];
+    }
+  } catch { /* Backend nicht erreichbar → Mock */ }
+  return mockData;
+}
+
+const MOCK_HOSTS        = ['web-prod-01','web-prod-02','db-master','db-replica','app-server-01','app-server-02','redis-01','lb-frontend','monitoring-01','backup-server','mail-relay','vpn-gateway'];
+const MOCK_SERVICES     = ['HTTP Check','Ping','CPU Load','Memory','Disk Usage','SSH','HTTPS Certificate','Database Connection','NTP','SNMP'];
+const MOCK_HOSTGROUPS   = ['Linux Servers','Windows Servers','Network Devices','Storage Systems','Virtualization Hosts','DMZ Hosts'];
+const MOCK_SERVICEGROUPS= ['HTTP Services','Database Services','Monitoring Services','Backup Services','Security Services'];
+const MOCK_BI           = ['my_bi_collection','infrastructure','frontend_stack','database_cluster','payment_platform'];
+
+function _endpointFor(type) {
+  const map = { host: '/cmk/hosts', service: '/cmk/services',
+                hostgroup: '/cmk/hostgroups', servicegroup: '/cmk/servicegroups', bi: '/cmk/bi-packs' };
+  return map[type] || null;
+}
+function _mockFor(type) {
+  const map = { host: MOCK_HOSTS, service: MOCK_SERVICES,
+                hostgroup: MOCK_HOSTGROUPS, servicegroup: MOCK_SERVICEGROUPS, bi: MOCK_BI };
+  return map[type] || [];
+}
 
 export function updateUndoRedoButtons() {
   const u = document.getElementById('btn-undo');
@@ -33,7 +43,7 @@ export function updateUndoRedoButtons() {
   if (r) r.disabled = history.future.length === 0;
 }
 
-export function updateInspector() {
+export async function updateInspector() {
   // ── Multi-Select ───────────────────────────────────────────────────────
   if (multiSelect.size > 0) {
     inspector.classList.remove('hidden');
@@ -175,24 +185,43 @@ export function updateInspector() {
 
   let aggSection = '';
   if (node.type === 'aggregator') {
-    const cur = node.aggType || 'and';
+    const cur    = node.aggType || 'and';
+    const params = (node.params || []).join(', ');
     aggSection = `
       <div>
         <label class="block text-gray-400 mb-1">Aggregation-Typ</label>
         <select id="agg-type-select" class="w-full bg-[#1e1e1e] border border-[#444444] rounded px-3 py-2 focus:outline-none focus:border-[#13d38e]">
           ${aggregatorTypes.map(o => `<option value="${o.value}" ${o.value===cur?'selected':''}>${o.label}</option>`).join('')}
         </select>
+      </div>
+      <div>
+        <label class="block text-gray-400 mb-1">Parameter
+          <span class="text-gray-600 font-normal ml-1">(z.B. HOSTNAME, FS)</span>
+        </label>
+        <input type="text" id="inp-params" value="${params}"
+               placeholder="HOSTNAME, SERVICE"
+               class="w-full bg-[#1e1e1e] border border-[#444444] rounded px-3 py-2 focus:outline-none focus:border-[#13d38e] text-white font-mono text-xs">
+        <div class="text-xs text-gray-600 mt-0.5">Im Label/Feld als <code class="text-[#13d38e]">$NAME$</code> nutzen</div>
       </div>`;
   }
 
-  const HOST_LIKE = ['host', 'hostgroup'];
-  const SVC_LIKE  = ['service', 'servicegroup'];
+  const HOST_LIKE   = ['host', 'hostgroup'];
+  const SVC_LIKE    = ['service', 'servicegroup'];
   const showHostSvc = HOST_LIKE.includes(node.type) || SVC_LIKE.includes(node.type);
   const hostSvcLabel = { host: 'Host', hostgroup: 'Host-Gruppe', service: 'Service', servicegroup: 'Service-Gruppe' }[node.type] ?? '';
   const hostSvcPlaceholder = { host: 'z.B. web-prod-01', hostgroup: 'z.B. Linux Servers', service: 'z.B. HTTP Check', servicegroup: 'z.B. HTTP Services' }[node.type] ?? '';
-  const hostSvcSuggestions = HOST_LIKE.includes(node.type)
-    ? (node.type === 'host' ? MOCK_HOSTS : MOCK_HOSTGROUPS)
-    : (node.type === 'service' ? MOCK_SERVICES : MOCK_SERVICEGROUPS);
+
+  // Vorschläge aus API laden (async, nicht-blockierend)
+  let hostSvcSuggestions = [];
+  if (showHostSvc) {
+    const ep = _endpointFor(node.type);
+    hostSvcSuggestions = await _fetchSuggestions(ep, _mockFor(node.type));
+  }
+  let biSuggestions = [];
+  if (node.type === 'bi') {
+    biSuggestions = await _fetchSuggestions('/cmk/bi-packs', MOCK_BI);
+  }
+
   const hostSvcSection = showHostSvc ? `
     <div>
       <label class="block text-gray-400 mb-1">${hostSvcLabel}</label>
@@ -211,7 +240,7 @@ export function updateInspector() {
              value="${node.meta?.biRef || ''}" placeholder="z.B. infrastructure"
              class="w-full bg-[#1e1e1e] border border-[#444444] rounded px-3 py-2 focus:outline-none focus:border-[#13d38e] text-white">
       <datalist id="bi-ref-datalist">
-        ${MOCK_BI.map(b => `<option value="${b}">`).join('')}
+        ${biSuggestions.map(b => `<option value="${b}">`).join('')}
       </datalist>
     </div>` : '';
 
@@ -299,6 +328,14 @@ export function updateInspector() {
     }
   });
 
+  document.getElementById('inp-params')?.addEventListener('input', e => {
+    node.params = e.target.value
+      .split(',')
+      .map(s => s.trim().replace(/\$/g, '').toUpperCase())
+      .filter(Boolean);
+    _updateParamsOnNode(node);
+  });
+
   document.getElementById('agg-type-select')?.addEventListener('change', e => {
     node.aggType = e.target.value;
     const nodeEl = document.querySelector(`[data-id="${node.id}"]`);
@@ -323,4 +360,21 @@ export function updateInspector() {
     if (state.selectedNode) enterConnectMode(state.selectedNode.id);
   });
   document.getElementById('btn-del-node')?.addEventListener('click', deleteSelected);
+}
+
+// ── Parameter-Badge auf Node aktualisieren ────────────────────────────────
+function _updateParamsOnNode(node) {
+  const nodeEl = document.querySelector(`[data-id="${node.id}"]`);
+  if (!nodeEl) return;
+  let el = nodeEl.querySelector('.node-params');
+  if (node.params?.length) {
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'text-xs opacity-60 mt-0.5 node-params font-mono';
+      nodeEl.appendChild(el);
+    }
+    el.textContent = '(' + node.params.map(p => `$${p}$`).join(', ') + ')';
+  } else if (el) {
+    el.remove();
+  }
 }

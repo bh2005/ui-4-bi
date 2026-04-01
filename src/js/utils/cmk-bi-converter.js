@@ -25,15 +25,20 @@ export function exportToCMK(graphState, packId = 'ui4bi', packTitle = 'UI4BI Exp
   const aggregations = [];
 
   graphState.nodes.filter(n => n.type === 'aggregator').forEach(agg => {
-    const children = (childrenOf[agg.id] || [])
+    const children  = (childrenOf[agg.id] || [])
       .map(cid => graphState.nodes.find(n => n.id === cid))
       .filter(Boolean);
+
+    // Params: explizit gesetzte Parameter + aus Labels/hostSvc extrahierte $VAR$-Variablen
+    const explicitParams = agg.params || [];
+    const implicitParams = _extractVars([agg.label, ...children.map(c => c.meta?.hostSvc || c.label)]);
+    const allParams = [...new Set([...explicitParams, ...implicitParams])];
 
     rules.push({
       id:      `rule_${agg.id}`,
       pack_id: packId,
-      nodes:   children.map(c => _childToNodeGen(c)),
-      params:  { arguments: [] },
+      nodes:   children.map(c => _childToNodeGen(c, allParams)),
+      params:  { arguments: allParams },
       properties: {
         title:          agg.label,
         comment:        '',
@@ -55,7 +60,7 @@ export function exportToCMK(graphState, packId = 'ui4bi', packTitle = 'UI4BI Exp
         groups:   { names: ['Main'], paths: [] },
         node: {
           search: { type: 'empty' },
-          action: { type: 'call_a_rule', rule_id: `rule_${agg.id}`, params: { arguments: [] } },
+          action: { type: 'call_a_rule', rule_id: `rule_${agg.id}`, params: { arguments: allParams.map(p => `$${p}$`) } },
         },
         aggregation_visualization: {
           layout_id:           'builtin_default',
@@ -78,7 +83,17 @@ export function exportToCMK(graphState, packId = 'ui4bi', packTitle = 'UI4BI Exp
   };
 }
 
-function _childToNodeGen(node) {
+/** Extrahiert $VAR$-Bezeichner aus einem Array von Strings */
+function _extractVars(strings) {
+  const vars = new Set();
+  for (const s of strings) {
+    if (!s) continue;
+    for (const m of String(s).matchAll(/\$([A-Z0-9_]+)\$/g)) vars.add(m[1]);
+  }
+  return [...vars];
+}
+
+function _childToNodeGen(node, parentParams = []) {
   switch (node.type) {
     case 'host':
       return {
@@ -123,15 +138,21 @@ function _childToNodeGen(node) {
         },
         action: { type: 'call_a_rule', rule_id: `rule_${node.id}`, params: { arguments: [] } },
       };
-    case 'aggregator':
+    case 'aggregator': {
+      const childParams = (node.params || []);
+      const passArgs = childParams.length
+        ? childParams.map(p => `$${p}$`)
+        : parentParams.map(p => `$${p}$`);
       return {
         search: { type: 'empty' },
-        action: { type: 'call_a_rule', rule_id: `rule_${node.id}`, params: { arguments: [] } },
+        action: { type: 'call_a_rule', rule_id: `rule_${node.id}`, params: { arguments: passArgs } },
       };
+    }
     case 'bi':
       return {
         search: { type: 'empty' },
-        action: { type: 'call_a_rule', rule_id: node.meta?.biRef || node.label, params: { arguments: [] } },
+        action: { type: 'call_a_rule', rule_id: node.meta?.biRef || node.label,
+          params: { arguments: parentParams.map(p => `$${p}$`) } },
       };
     default:
       return {
@@ -167,6 +188,9 @@ export function importFromCMK(pack) {
   for (const rule of (pack.rules || [])) {
     const nodeId = nextId++;
     ruleToNodeId[rule.id] = nodeId;
+    const rawParams = rule.params?.arguments || [];
+    // CMK speichert Params als ['HOSTNAME'] oder ['$HOSTNAME$'] — normalisieren
+    const cleanParams = rawParams.map(p => p.replace(/\$/g, '').toUpperCase()).filter(Boolean);
     nodes.push({
       id:      nodeId,
       type:    'aggregator',
@@ -175,6 +199,7 @@ export function importFromCMK(pack) {
       color:   '#13d38e',
       icon:    'git-merge',
       aggType: _localAggType(rule.aggregation_function),
+      params:  cleanParams.length ? cleanParams : undefined,
     });
   }
 

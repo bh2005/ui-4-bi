@@ -69,11 +69,22 @@
 - DOM-Pooling: `<div>`-Elemente werden wiederverwendet
 - Persistenter Edge-SVG: wird gecleared statt neu erstellt
 
-### Audit-Log & RBAC
+### Audit-Log
 - Jede State-Mutation wird geloggt (Zeitstempel, User, Aktion, Details)
 - localStorage-Persistenz (100 Einträge)
 - Audit-Modal: Suche, Filter nach Aktion, CSV-Export
-- Benutzername: localStorage, änderbar per Popover
+
+### Authentifizierung & Benutzerverwaltung
+- **Lokale Benutzer** — PBKDF2-HMAC-SHA256, data/users.json
+- **LDAP / Active Directory** — ldap3, Bind-DN, Gruppen-Mapping
+- **Checkmk-Auth** — REST-API Basic Auth, Rollen-Ermittlung
+- **Auth-Kette:** lokal → LDAP → Checkmk (erste Übereinstimmung gewinnt)
+- **JWT-Token** — HS256, 8h Laufzeit, Secret in data/.jwt_secret
+- **`AUTH_ENABLED=false`** — kein Login nötig (Standard für Entwicklung)
+- **Login-Modal** — Methoden-Selector (lokal/LDAP/CMK), Session-Ablauf-Handling
+- **Admin-UI** — Benutzer anlegen, bearbeiten, aktivieren/deaktivieren, löschen
+- **Letzter-Admin-Schutz** — letzter aktiver Admin kann nicht gelöscht werden
+- **apiFetch-Wrapper** — hängt Bearer-Token an alle API-Requests, 401 → Login-Modal
 
 ### Preview
 - Mock-Vorschau: simulierte Check_MK-States pro Node (OK / WARNING / CRITICAL / UNKNOWN)
@@ -83,26 +94,21 @@
 
 ## Roadmap
 
-### Phase 1 – Interaktions-Polish (nächste Schritte)
-- [ ] Ports (4 seitige Port-Punkte an Node-Kanten, Drag von Port zu Port)
-- [ ] Vollständiger dynamischer Inspector (Selector-Felder mit Autocomplete)
-- [ ] Layers-UI (Layer-Liste, Sichtbarkeit, Lock)
-- [ ] Connect-Modus: visuelles Feedback verbessern
+### Offen – Auth & Admin
+- [ ] LDAP mit echtem AD testen
+- [ ] Checkmk-Auth live testen
+- [ ] Passwort-Änderung im UI (eigenes Passwort, `/me/password`)
+- [ ] Session-Ablauf-Handling ohne Seitenneustart
 
-### Phase 2 – CMK-Integration
-- [ ] Backend-Anbindung an echte Check_MK-Endpoints
-- [ ] Echter Preview / Dry-Run mit Zustands-Highlighting auf Canvas
-- [ ] Import / Export echter BI-Regelformat (UI-JSON ↔ CMK-YAML/JSON)
-- [ ] Unresolved-Objects-Modal
+### Offen – CMK-Integration
+- [ ] Rule Packs (Name, Contact-Group, `pack_id`)
+- [ ] Dynamischer Suchregel-Node (Host/Service per Regex)
+- [ ] Preview-Modal mit echten CMK-States (Livestatus / REST-API)
+- [ ] Unresolved-Objects-Modal nach Validierung
 
-### Phase 3 – Advanced Features
+### Offen – Advanced Features
 - [ ] Orthogonales Routing mit vollständiger Avoidance
 - [ ] Node-State-Farben live (OK=grün, WARN=gelb, CRIT=rot)
-- [ ] Lokale + Backend-Validierung mit Fehler-Highlighting
 - [ ] Smart-Guides (Abstand-Anzeige beim Verschieben)
-
-### Phase 4 – Production-Ready
 - [ ] Keyboard-Shortcut-Übersicht (? Modal)
-- [ ] Performance-Test bei 500+ Nodes
-- [ ] Check_MK-Plugin Export
 - [ ] Versionierung / Graph-History

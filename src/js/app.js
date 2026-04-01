@@ -13,6 +13,8 @@ import { updateUndoRedoButtons, updateInspector } from './ui/inspector.js';
 import { initLayersUI } from './ui/layers-ui.js';
 import { initTheme, toggleTheme } from './core/theme.js';
 import { canvas } from './core/state.js';
+import { initLogin } from './ui/login.js';
+import { openAdminModal } from './ui/admin-ui.js';
 
 // ── Audit-Log aus localStorage laden ─────────────────────────────────────
 try {
@@ -44,7 +46,7 @@ function loadDemoGraph() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
-function init() {
+async function init() {
   // Interaktionen & UI verdrahten
   initMouseHandler();
   initMarqueeHandler();
@@ -57,6 +59,10 @@ function init() {
   initLayersUI();
   initTheme();
   document.getElementById('btn-theme')?.addEventListener('click', toggleTheme);
+  document.getElementById('btn-admin')?.addEventListener('click', openAdminModal);
+
+  // Auth initialisieren (zeigt Login-Modal wenn nötig)
+  await initLogin();
 
   updateUndoRedoButtons();
   const zd = document.getElementById('zoom-level');

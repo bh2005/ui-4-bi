@@ -49,6 +49,7 @@ export function createNodeElement(node) {
     <i data-lucide="${node.icon}" class="w-6 h-6 mb-1.5"></i>
     <div class="font-semibold node-label">${node.label}</div>
     ${node.aggType ? `<div class="text-xs opacity-80 mt-0.5 node-aggtype">(${node.aggType.toUpperCase()})</div>` : ''}
+    ${node.params?.length ? `<div class="text-xs opacity-60 mt-0.5 node-params font-mono">(${node.params.map(p=>'$'+p+'$').join(', ')})</div>` : ''}
     ${node.meta?.biRef ? `<div class="text-xs opacity-70 mt-0.5 node-biref">↗ ${node.meta.biRef}</div>` : ''}
   `;
 

@@ -1,3 +1,48 @@
+2026-04-01  Benutzerverwaltung & Authentifizierung
+            auth_manager.py: JWT (PyJWT, HS256, 8h), LDAP (ldap3), Checkmk REST-Auth
+            user_store.py: lokale Benutzerdatenbank (data/users.json), PBKDF2-HMAC-SHA256
+            main.py: Endpoints /login, /me, /auth/config; CRUD /users; /me/password
+            Alle Backend-Endpoints mit require_auth / require_admin geschuetzt
+            AUTH_ENABLED=false (Standard): kein Login noetig, anonymous-Admin
+            Auth-Kette: lokal -> LDAP -> Checkmk
+            Letzter-Admin-Schutz beim Loeschen
+
+            Frontend:
+            js/core/auth.js: Token-Management (localStorage), apiFetch-Wrapper,
+              automatische 401-Behandlung (Session-Ablauf -> Login-Modal)
+            js/ui/login.js: Login-Modal (Methoden-Selector lokal/ldap/cmk),
+              _updateBadge (Username, Rolle, Admin/Logout-Button)
+            js/ui/admin-ui.js: Benutzerverwaltung-Modal (Tabelle, Erstellen,
+              Bearbeiten, Aktivieren/Deaktivieren, Loeschen)
+            index.html: Admin-Button (Shield), Logout-Button, user-badge-role
+            app.js: initLogin() und openAdminModal() integriert
+            toolbar.js: saveGraph/validateGraph nutzen apiFetch
+            requirements.txt: PyJWT>=2.8, ldap3>=2.9, pydantic>=2.0
+
+2026-04-01  Neue Node-Typen, Themes, Pfeilstile, CMK-Import/Export, Docker
+            Node-Typen: Host-Gruppe, Service-Gruppe, Andere BI (mit biRef)
+            Dark/Light Theme Toggle (persistent, CSS-Variablen, Sonne/Mond-Button)
+            Node-Labels im Light Mode: dunkelgrau (#333333)
+            Pfeilstile: Keiner, Chevron, Thin, Dot - in 3 Groessen (Kl/Mi/Gr)
+            SVG-Marker mit viewBox-Skalierung (18 Varianten: 3 Stile x 3 Groessen x 2 Zustaende)
+            Gerundete Ecken bei orthogonalen Kanten (Quadratic-Bezier, CORNER_R=14px)
+
+            CMK BI Import/Export (js/utils/cmk-bi-converter.js):
+            - exportToCMK(): Graph -> vollstaendiges Checkmk BI Pack JSON
+            - importFromCMK(): Checkmk BI Pack JSON -> Graph + Auto-Layout
+            - Alle Node-Typen gemappt: state_of_host, state_of_service,
+              host_search, service_search, call_a_rule
+            - Aggregationsfunktionen: worst, best, count_ok
+            - Zwei neue Toolbar-Buttons (gruen umrandet): CMK-Import / CMK-Export
+
+            Docker-Setup:
+            - Dockerfile (nginx 1.27-alpine + Frontend)
+            - Dockerfile.backend (python:3.12-slim + FastAPI/uvicorn)
+            - docker-compose.yml mit persistentem data/-Volume
+            - docker/nginx.conf mit Reverse-Proxy fuer API-Endpoints
+            - .dockerignore, .gitignore
+            - main.py: CORS-Middleware, SAVE_FILE aus ENV, data/-Dir auto-erstellt
+
 ## 2026-03-31 - Phase 1: Interaktions-Polish
 
 ### Issue 4: Connect-Modus verbessern

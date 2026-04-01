@@ -19,6 +19,9 @@ services:
     volumes:
       # Gespeicherten Graphen auf dem Host behalten
       - ./data:/app/data
+    env_file:
+      - path: .env
+        required: false     # optional – läuft auch ohne .env (dann Mock-Daten)
     environment:
       - SAVE_FILE=/app/data/saved_graph.json
     restart: unless-stopped
