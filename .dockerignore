@@ -1,0 +1,10 @@
+.git
+.gitignore
+todo.md
+docs/
+*.md
+docker/
+data/
+__pycache__/
+*.pyc
+*.pyo

@@ -1,0 +1,27 @@
+services:
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    expose:
+      - "8000"
+    volumes:
+      # Gespeicherten Graphen auf dem Host behalten
+      - ./data:/app/data
+    environment:
+      - SAVE_FILE=/app/data/saved_graph.json
+    restart: unless-stopped
+
+volumes:
+  {}

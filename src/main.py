@@ -1,13 +1,22 @@
-from fastapi import FastAPI, HTTPException
+import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import json
 from pathlib import Path
 from typing import List, Dict, Any
-from datetime import datetime
 
 app = FastAPI()
 
-SAVE_FILE = Path("saved_graph.json")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+SAVE_FILE = Path(os.getenv("SAVE_FILE", "saved_graph.json"))
+SAVE_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 class Graph(BaseModel):
     nodes: List[Dict[str, Any]]

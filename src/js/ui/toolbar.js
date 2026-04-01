@@ -4,6 +4,7 @@ import { pushHistory, logAudit } from '../core/actions.js';
 import { scheduleRedrawEdges, fullRedraw } from '../renderer/renderer.js';
 import { snapToGrid } from '../utils/geometry.js';
 import { showToast } from './audit-ui.js';
+import { exportToCMK, importFromCMK } from '../utils/cmk-bi-converter.js';
 
 // ── Speichern ─────────────────────────────────────────────────────────────
 export async function saveGraph() {
@@ -313,6 +314,50 @@ function initLayoutDropdown() {
   document.addEventListener('click', () => { dropdown.style.display = 'none'; });
 }
 
+// ── CMK Export ────────────────────────────────────────────────────────────
+function exportCMK() {
+  const packId    = prompt('Pack-ID:', 'ui4bi') ?? 'ui4bi';
+  const packTitle = prompt('Pack-Titel:', 'UI4BI Export') ?? 'UI4BI Export';
+  const pack = exportToCMK(graphState, packId.trim() || 'ui4bi', packTitle.trim() || 'UI4BI Export');
+  const data = JSON.stringify(pack, null, 2);
+  const a = document.createElement('a');
+  a.href     = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  a.download = `${packId}_bi_pack.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  logAudit('CMK BI Export', `Pack: ${packId}, ${pack.rules.length} Regeln, ${pack.aggregations.length} Aggregate`);
+  showToast(`✓ CMK BI Pack exportiert: ${pack.rules.length} Regeln`, true);
+}
+
+// ── CMK Import ────────────────────────────────────────────────────────────
+function importCMK() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const pack = JSON.parse(ev.target.result);
+        if (!pack.rules && !pack.aggregations) throw new Error('Kein gültiges CMK BI Pack (rules/aggregations fehlen)');
+        pushHistory();
+        const { nodes, edges, nextId } = importFromCMK(pack);
+        graphState.nodes  = nodes;
+        graphState.edges  = edges;
+        graphState.nextId = nextId;
+        multiSelect.clear();
+        fullRedraw();
+        import('./toolbar.js').then(m => m.autoLayout('TB'));
+        logAudit('CMK BI Import', `Pack: ${pack.id ?? file.name}, ${nodes.length} Nodes`);
+        showToast(`✓ CMK Pack importiert: ${nodes.length} Nodes, ${edges.length} Kanten`, true);
+      } catch (err) { showToast('CMK Import fehlgeschlagen: ' + err.message, false); }
+    };
+    reader.readAsText(file);
+  });
+  input.click();
+}
+
 // ── Toolbar initialisieren ────────────────────────────────────────────────
 export function initToolbar() {
   document.getElementById('btn-undo')?.addEventListener('click',     () => import('../core/actions.js').then(m => m.undo()));
@@ -321,6 +366,8 @@ export function initToolbar() {
   document.getElementById('btn-validate')?.addEventListener('click', validateGraph);
   document.getElementById('btn-export')?.addEventListener('click',   exportJSON);
   document.getElementById('btn-import')?.addEventListener('click',   importJSON);
+  document.getElementById('btn-cmk-export')?.addEventListener('click', exportCMK);
+  document.getElementById('btn-cmk-import')?.addEventListener('click', importCMK);
   initSnapToggle();
   initLayoutDropdown();
 }
