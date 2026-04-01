@@ -9,9 +9,12 @@ export const aggregatorTypes = [
 ];
 
 export const nodeTypes = [
-  { type: 'aggregator', label: 'BI Aggregator',  color: '#13d38e', icon: 'git-merge' },
-  { type: 'host',       label: 'Host (Process)', color: '#A5D6A7', icon: 'server'    },
-  { type: 'service',    label: 'Service',        color: '#90A4AE', icon: 'activity'  },
+  { type: 'aggregator',  label: 'BI Aggregator',   color: '#13d38e', icon: 'git-merge'   },
+  { type: 'host',        label: 'Host (Process)',  color: '#A5D6A7', icon: 'server'       },
+  { type: 'service',     label: 'Service',         color: '#90A4AE', icon: 'activity'     },
+  { type: 'hostgroup',   label: 'Host-Gruppe',     color: '#66BB6A', icon: 'layers'       },
+  { type: 'servicegroup',label: 'Service-Gruppe',  color: '#78909C', icon: 'list-checks'  },
+  { type: 'bi',          label: 'Andere BI',       color: '#9C7DFF', icon: 'share-2'      },
 ];
 
 // ── Layout-Konstanten ─────────────────────────────────────────────────────

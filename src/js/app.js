@@ -11,6 +11,7 @@ import { initToolbar } from './ui/toolbar.js';
 import { initAuditUI, initPreviewUI, initUserBadge, showToast } from './ui/audit-ui.js';
 import { updateUndoRedoButtons, updateInspector } from './ui/inspector.js';
 import { initLayersUI } from './ui/layers-ui.js';
+import { initTheme, toggleTheme } from './core/theme.js';
 import { canvas } from './core/state.js';
 
 // ── Audit-Log aus localStorage laden ─────────────────────────────────────
@@ -54,6 +55,8 @@ function init() {
   initPreviewUI();
   initUserBadge();
   initLayersUI();
+  initTheme();
+  document.getElementById('btn-theme')?.addEventListener('click', toggleTheme);
 
   updateUndoRedoButtons();
   const zd = document.getElementById('zoom-level');
