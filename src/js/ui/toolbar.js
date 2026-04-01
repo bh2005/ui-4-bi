@@ -1,10 +1,9 @@
 import { graphState, state, multiSelect } from '../core/state.js';
 import { LAYOUT } from '../core/constants.js';
 import { pushHistory, logAudit } from '../core/actions.js';
-import { scheduleRedrawEdges, fullRedraw, applyTransform } from '../renderer/renderer.js';
+import { scheduleRedrawEdges, fullRedraw } from '../renderer/renderer.js';
 import { snapToGrid } from '../utils/geometry.js';
 import { showToast } from './audit-ui.js';
-import { updateInspector } from './inspector.js';
 
 // ── Speichern ─────────────────────────────────────────────────────────────
 export async function saveGraph() {
@@ -189,27 +188,51 @@ export function autoLayout(dir = state.layoutDir) {
   const offX=(vpW-(maxX-minX))/2-minX, offY=(vpH-(maxY-minY))/2-minY;
   graphState.nodes.forEach(n => { n.x=snapToGrid(Math.round(n.x+offX)); n.y=snapToGrid(Math.round(n.y+offY)); });
 
-  // 7. Orthogonale Waypoints + Skip-Bypass
-  const maxNX = Math.max(...graphState.nodes.map(n=>n.x))+NODE_W+GAP_X;
-  const maxNY = Math.max(...graphState.nodes.map(n=>n.y))+NODE_H+GAP_Y;
+  // 7. Orthogonale Waypoints + Skip-Bypass (kompakt: nur bis hinter Zwischen-Layer)
   graphState.edges.forEach(edge => {
     const fn = graphState.nodes.find(n=>n.id===edge.from);
     const tn = graphState.nodes.find(n=>n.id===edge.to);
     if (!fn||!tn) return;
     edge.routing = 'straight';
-    const isSkip = Math.abs((rank[tn.id]??0)-(rank[fn.id]??0)) > 1;
+    const srcRank = rank[fn.id]??0, tgtRank = rank[tn.id]??0;
+    const isSkip  = Math.abs(tgtRank - srcRank) > 1;
+
+    // Zwischen-Layer-Nodes (für kompakten Bypass-Abstand)
+    const intermed = isSkip ? graphState.nodes.filter(n => {
+      const r = rank[n.id]??0;
+      return r > Math.min(srcRank,tgtRank) && r < Math.max(srcRank,tgtRank);
+    }) : [];
+
     if (dir === 'TB') {
       const srcCX=Math.round(fn.x+NODE_W/2), tgtCX=Math.round(tn.x+NODE_W/2);
-      const gutY=Math.round(fn.y+NODE_H+GAP_Y/2), tgtGutY=Math.round(tn.y-GAP_Y/2);
-      if (!isSkip && Math.abs(srcCX-tgtCX)<=4) edge.waypoints=[];
-      else if (!isSkip) edge.waypoints=[{x:srcCX,y:gutY},{x:tgtCX,y:gutY}];
-      else edge.waypoints=[{x:srcCX,y:gutY},{x:maxNX,y:gutY},{x:maxNX,y:tgtGutY},{x:tgtCX,y:tgtGutY}];
+      const gutY   =Math.round(fn.y+NODE_H+GAP_Y/2);
+      const tgtGutY=Math.round(tn.y-GAP_Y/2);
+      if (!isSkip && Math.abs(srcCX-tgtCX)<=4) {
+        edge.waypoints=[];
+      } else if (!isSkip) {
+        edge.waypoints=[{x:srcCX,y:gutY},{x:tgtCX,y:gutY}];
+      } else {
+        // Bypass rechts neben den Zwischen-Layer-Nodes
+        const bypassX = intermed.length
+          ? Math.max(...intermed.map(n=>n.x)) + NODE_W + Math.round(GAP_X*0.6)
+          : Math.max(fn.x, tn.x) + NODE_W + Math.round(GAP_X*0.6);
+        edge.waypoints=[{x:srcCX,y:gutY},{x:bypassX,y:gutY},{x:bypassX,y:tgtGutY},{x:tgtCX,y:tgtGutY}];
+      }
     } else {
       const srcCY=Math.round(fn.y+NODE_H/2), tgtCY=Math.round(tn.y+NODE_H/2);
-      const gutX=Math.round(fn.x+NODE_W+GAP_X/2), tgtGutX=Math.round(tn.x-GAP_X/2);
-      if (!isSkip && Math.abs(srcCY-tgtCY)<=4) edge.waypoints=[];
-      else if (!isSkip) edge.waypoints=[{x:gutX,y:srcCY},{x:gutX,y:tgtCY}];
-      else edge.waypoints=[{x:gutX,y:srcCY},{x:gutX,y:maxNY},{x:tgtGutX,y:maxNY},{x:tgtGutX,y:tgtCY}];
+      const gutX   =Math.round(fn.x+NODE_W+GAP_X/2);
+      const tgtGutX=Math.round(tn.x-GAP_X/2);
+      if (!isSkip && Math.abs(srcCY-tgtCY)<=4) {
+        edge.waypoints=[];
+      } else if (!isSkip) {
+        edge.waypoints=[{x:gutX,y:srcCY},{x:gutX,y:tgtCY}];
+      } else {
+        // Bypass unterhalb der Zwischen-Layer-Nodes
+        const bypassY = intermed.length
+          ? Math.max(...intermed.map(n=>n.y)) + NODE_H + Math.round(GAP_Y*0.6)
+          : Math.max(fn.y, tn.y) + NODE_H + Math.round(GAP_Y*0.6);
+        edge.waypoints=[{x:gutX,y:srcCY},{x:gutX,y:bypassY},{x:tgtGutX,y:bypassY},{x:tgtGutX,y:tgtCY}];
+      }
     }
   });
 
@@ -236,31 +259,6 @@ export function autoLayout(dir = state.layoutDir) {
     });
   }
 
-  // 7c. Fan-in X-Staffelung: Kanten die am selben Ziel-Node ankommen
-  //     erhalten verschiedene Eintrittspunkte → kein Überlappen am Ziel-Border
-  {
-    const FAN_SEP = 14;
-    const byTarget = {};
-    graphState.edges.forEach(edge => {
-      if (!edge.waypoints?.length) return;
-      if (!byTarget[edge.to]) byTarget[edge.to] = [];
-      byTarget[edge.to].push(edge);
-    });
-    Object.values(byTarget).forEach(group => {
-      if (group.length < 2) return;
-      group.sort((a,b) => {
-        const fa=graphState.nodes.find(n=>n.id===a.from), fb=graphState.nodes.find(n=>n.id===b.from);
-        return dir==='LR' ? (fa?.y??0)-(fb?.y??0) : (fa?.x??0)-(fb?.x??0);
-      });
-      const base = -((group.length-1)*FAN_SEP)/2;
-      group.forEach((edge, i) => {
-        const off = Math.round(base + i*FAN_SEP);
-        const last = edge.waypoints[edge.waypoints.length-1];
-        if (dir==='TB') last.x += off;
-        else             last.y += off;
-      });
-    });
-  }
 
   // 8. Animiert DOM aktualisieren
   graphState.nodes.forEach(node => {

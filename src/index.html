@@ -7,13 +7,73 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
+    /* ── Theme Variables ──────────────────────────────────────────────── */
+    :root {
+      --c-bg:        #1a1a1a;
+      --c-surface:   #242424;
+      --c-panel:     #1e1e1e;
+      --c-el:        #2b2b2b;
+      --c-el-hover:  #333333;
+      --c-border:    #3a3a3a;
+      --c-border2:   #444444;
+      --c-text:      #f3f4f6;
+      --c-text2:     #d1d5db;
+      --c-text3:     #9ca3af;
+      --c-text4:     #6b7280;
+      --c-grid:      #33333322;
+      --c-canvas-bg: #1a1a1a;
+    }
+    html.light {
+      --c-bg:        #ebebeb;
+      --c-surface:   #ffffff;
+      --c-panel:     #f4f4f4;
+      --c-el:        #e2e2e2;
+      --c-el-hover:  #d0d0d0;
+      --c-border:    #d0d0d0;
+      --c-border2:   #c0c0c0;
+      --c-text:      #111111;
+      --c-text2:     #333333;
+      --c-text3:     #555555;
+      --c-text4:     #777777;
+      --c-grid:      #00000018;
+      --c-canvas-bg: #f0f0f0;
+    }
+
     #canvas {
       background-image:
-        linear-gradient(#33333322 1px, transparent 1px),
-        linear-gradient(90deg, #33333322 1px, transparent 1px);
+        linear-gradient(var(--c-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--c-grid) 1px, transparent 1px);
       background-size: 20px 20px;
-      background-color: #1a1a1a;
+      background-color: var(--c-canvas-bg);
     }
+
+    /* ── Light Theme Overrides ────────────────────────────────────────── */
+    html.light body { background-color: var(--c-bg) !important; color: var(--c-text) !important; }
+    html.light .bg-\[\#1a1a1a\] { background-color: var(--c-bg) !important; }
+    html.light .bg-\[\#1e1e1e\] { background-color: var(--c-panel) !important; }
+    html.light .bg-\[\#242424\] { background-color: var(--c-surface) !important; }
+    html.light .bg-\[\#2b2b2b\] { background-color: var(--c-el) !important; }
+    html.light .bg-\[\#333333\] { background-color: var(--c-el-hover) !important; }
+    html.light .hover\:bg-\[\#3a3a3a\]:hover,
+    html.light .hover\:bg-\[\#333333\]:hover,
+    html.light .hover\:bg-\[\#333\]:hover { background-color: var(--c-el-hover) !important; }
+    html.light .border-\[\#3a3a3a\] { border-color: var(--c-border) !important; }
+    html.light .border-\[\#444444\],
+    html.light .border-\[\#444\]    { border-color: var(--c-border2) !important; }
+    html.light .border-\[\#555\]    { border-color: #aaa !important; }
+    html.light .text-white          { color: var(--c-text) !important; }
+    html.light .text-gray-100       { color: var(--c-text) !important; }
+    html.light .text-gray-200       { color: var(--c-text2) !important; }
+    html.light .text-gray-300       { color: var(--c-text2) !important; }
+    html.light .text-gray-400       { color: var(--c-text3) !important; }
+    html.light .text-gray-500,
+    html.light .text-gray-600       { color: var(--c-text4) !important; }
+    html.light .placeholder-gray-600::placeholder { color: #aaa !important; }
+    html.light #layout-dropdown     { background: var(--c-panel) !important; border-color: var(--c-border) !important; }
+    html.light #ctx-menu            { background: var(--c-surface) !important; border-color: var(--c-border) !important; color: var(--c-text) !important; }
+    html.light #user-popover        { background: var(--c-surface) !important; border-color: var(--c-border) !important; }
+    html.light .port-dot            { border-color: var(--c-canvas-bg) !important; }
+    html.light [data-id]            { color: #333333 !important; }
     #marquee {
       position: absolute;
       border: 2px dashed #13d38e;
@@ -244,6 +304,12 @@
         <i data-lucide="clock" class="w-4 h-4"></i>
       </button>
 
+      <!-- Theme Toggle -->
+      <button id="btn-theme" title="Light Mode aktivieren"
+        class="bg-[#2b2b2b] border border-[#444444] rounded w-9 h-9 flex items-center justify-center hover:bg-[#3a3a3a] transition">
+        <i data-lucide="sun" class="w-4 h-4"></i>
+      </button>
+
       <div class="w-px h-6 bg-[#444444]"></div>
 
       <!-- Phase 3B: User Badge -->
@@ -291,6 +357,15 @@
         </div>
         <div draggable="true" data-type="service" class="bg-[#2b2b2b] border-2 border-[#90A4AE] rounded-md p-3 text-center text-sm cursor-grab hover:bg-[#333333] italic">
           Service
+        </div>
+        <div draggable="true" data-type="hostgroup" class="bg-[#2b2b2b] border-2 border-[#66BB6A] rounded p-3 text-center text-sm cursor-grab hover:bg-[#333333]">
+          Host-Gruppe
+        </div>
+        <div draggable="true" data-type="servicegroup" class="bg-[#2b2b2b] border-2 border-[#78909C] rounded-md p-3 text-center text-sm cursor-grab hover:bg-[#333333] italic">
+          Service-Gruppe
+        </div>
+        <div draggable="true" data-type="bi" class="bg-[#2b2b2b] border-2 border-dashed border-[#9C7DFF] rounded-xl p-3 text-center text-sm cursor-grab hover:bg-[#333333] font-semibold">
+          Andere BI
         </div>
       </div>
 

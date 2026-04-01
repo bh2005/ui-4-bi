@@ -9,6 +9,37 @@ edgeSvg.classList.add('edge-layer');
 edgeSvg.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:visible;';
 // Wird in renderer.js an canvas angehängt, nachdem canvas-Ref verfügbar ist
 
+// ── Gerundete Ecken: Orthogonale Segmente mit Quadratic-Bézier-Bögen ─────────
+const CORNER_R = 14;
+
+function _roundedPath(pts, r = CORNER_R) {
+  if (pts.length < 2) return '';
+  if (pts.length === 2) {
+    return `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)} L ${pts[1].x.toFixed(1)},${pts[1].y.toFixed(1)}`;
+  }
+  let d = `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const prev = pts[i - 1], curr = pts[i], next = pts[i + 1];
+    const d1 = Math.hypot(curr.x - prev.x, curr.y - prev.y);
+    const d2 = Math.hypot(next.x - curr.x, next.y - curr.y);
+    const radius = Math.min(r, d1 / 2, d2 / 2);
+    if (radius < 2) {
+      d += ` L ${curr.x.toFixed(1)},${curr.y.toFixed(1)}`;
+      continue;
+    }
+    const t1 = radius / d1;
+    const bx = curr.x - (curr.x - prev.x) * t1;
+    const by = curr.y - (curr.y - prev.y) * t1;
+    const t2 = radius / d2;
+    const ax = curr.x + (next.x - curr.x) * t2;
+    const ay = curr.y + (next.y - curr.y) * t2;
+    d += ` L ${bx.toFixed(1)},${by.toFixed(1)} Q ${curr.x.toFixed(1)},${curr.y.toFixed(1)} ${ax.toFixed(1)},${ay.toFixed(1)}`;
+  }
+  const last = pts[pts.length - 1];
+  d += ` L ${last.x.toFixed(1)},${last.y.toFixed(1)}`;
+  return d;
+}
+
 // ── Pfad-Berechnung ────────────────────────────────────────────────────────
 export function buildEdgePath(edge, fromNode, toNode) {
   // Port-Override: wenn Ports gesetzt, exakte Port-Position nutzen
@@ -23,7 +54,7 @@ export function buildEdgePath(edge, fromNode, toNode) {
       start = _pStart || getEdgePointToTarget(fromNode, firstWP.x, firstWP.y);
       end   = _pEnd   || getEdgePointToTarget(toNode,   lastWP.x,  lastWP.y);
       const pts = [start, ...edge.waypoints, end];
-      const d   = 'M ' + pts.map(p => `${p.x},${p.y}`).join(' L ');
+      const d   = _roundedPath(pts);
       return { d, start, end, cp1x: start.x, cp1y: start.y, cp2x: end.x, cp2y: end.y };
     }
     start = _pStart || getEdgePoint(fromNode, toNode);
@@ -106,43 +137,33 @@ export function redrawEdges(scheduleRedrawEdgesFn) {
   while (svg.firstChild) svg.removeChild(svg.firstChild);
 
   const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-  defs.innerHTML = `
-    <marker id="arrow"     markerWidth="12" markerHeight="12" refX="10" refY="3" orient="auto"><path d="M0,0 L0,6 L10,3 z" fill="#13d38e"/></marker>
-    <marker id="arrow-sel" markerWidth="12" markerHeight="12" refX="10" refY="3" orient="auto"><path d="M0,0 L0,6 L10,3 z" fill="#ffffff"/></marker>`;
+  // Marker in 3 Größen × 3 Stile × 2 Zustände (normal/sel) — via viewBox-Skalierung
+  {
+    const SIZES   = { sm: [5,4], md: [8,6], lg: [13,10] };
+    const COLORS  = { '': '#13d38e', '-sel': '#ffffff', '-sel-light': '#1a1a1a' };
+    let h = '';
+    Object.entries(SIZES).forEach(([sz, [mw, mh]]) => {
+      Object.entries(COLORS).forEach(([sfx, col]) => {
+        h += `
+          <marker id="arrow-chevron-${sz}${sfx}" viewBox="0 0 10 8" markerWidth="${mw}" markerHeight="${mh}" refX="9" refY="4" orient="auto">
+            <path d="M0,0 L9,4 L0,8 Z" fill="${col}"/></marker>
+          <marker id="arrow-thin-${sz}${sfx}" viewBox="0 0 10 8" markerWidth="${mw}" markerHeight="${mh}" refX="9" refY="4" orient="auto">
+            <path d="M1,0.5 L9,4 L1,7.5" stroke="${col}" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></marker>
+          <marker id="arrow-dot-${sz}${sfx}" viewBox="0 0 10 8" markerWidth="${mw}" markerHeight="${mh}" refX="8" refY="4" orient="auto">
+            <circle cx="4.5" cy="4" r="3.5" fill="${col}"/></marker>`;
+      });
+    });
+    defs.innerHTML = h;
+  }
   svg.appendChild(defs);
 
-  // Parallele Kanten: senkrechter Versatz
-  const parallelOffset = {};
-  {
-    const groups = {};
-    graphState.edges.forEach(e => {
-      const key = [String(e.from), String(e.to)].sort().join('|');
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(e.id);
-    });
-    Object.values(groups).forEach(ids => {
-      if (ids.length < 2) return;
-      const step = 8, base = -((ids.length-1)*step)/2;
-      ids.forEach((id,i) => { parallelOffset[id] = base + i*step; });
-    });
-  }
-
   graphState.edges.forEach(edge => {
+
     const fromNode = graphState.nodes.find(n => n.id === edge.from);
     const toNode   = graphState.nodes.find(n => n.id === edge.to);
     if (!fromNode || !toNode) return;
 
-    const { d: dRaw, start, end, cp1x, cp1y, cp2x, cp2y } = buildEdgePath(edge, fromNode, toNode);
-    const pOff = parallelOffset[edge.id] ?? 0;
-    let d = dRaw;
-    if (Math.abs(pOff) > 0.1) {
-      const dx = end.x-start.x, dy = end.y-start.y;
-      const len = Math.hypot(dx,dy)||1;
-      const nx = -dy/len*pOff, ny = dx/len*pOff;
-      d = dRaw.replace(/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g, (_,px,py) =>
-        `${(+px+nx).toFixed(1)},${(+py+ny).toFixed(1)}`
-      );
-    }
+    const { d, start, end, cp1x, cp1y, cp2x, cp2y } = buildEdgePath(edge, fromNode, toNode);
     const isSelected = state.selectedEdge?.id === edge.id;
 
     // Hit-Path (unsichtbar, für Klicks)
@@ -168,11 +189,18 @@ export function redrawEdges(scheduleRedrawEdgesFn) {
 
     // Sichtbarer Pfad
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const arrowStyle = edge.arrowStyle ?? 'none';
+    const arrowSize  = edge.arrowSize  ?? 'sm';
+    const isLight    = document.documentElement.classList.contains('light');
+    const selSfx     = isLight ? '-sel-light' : '-sel';
+    const selColor   = isLight ? '#1a1a1a' : '#ffffff';
+    const markerUrl  = arrowStyle === 'none' ? 'none'
+      : isSelected ? `url(#arrow-${arrowStyle}-${arrowSize}${selSfx})` : `url(#arrow-${arrowStyle}-${arrowSize})`;
     path.setAttribute('d', d);
-    path.setAttribute('stroke',       isSelected ? '#ffffff' : (toNode.color || '#13d38e'));
+    path.setAttribute('stroke',       isSelected ? selColor : (toNode.color || '#13d38e'));
     path.setAttribute('stroke-width', isSelected ? '3.5' : '2.5');
     path.setAttribute('fill',         'none');
-    path.setAttribute('marker-end',   isSelected ? 'url(#arrow-sel)' : 'url(#arrow)');
+    path.setAttribute('marker-end',   markerUrl);
     svg.appendChild(path);
 
     // Waypoint-Handles (nur bei ausgewählter Kante)

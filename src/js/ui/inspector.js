@@ -13,6 +13,18 @@ const MOCK_SERVICES = [
   'HTTP Check', 'Ping', 'CPU Load', 'Memory', 'Disk Usage',
   'SSH', 'HTTPS Certificate', 'Database Connection', 'NTP', 'SNMP',
 ];
+const MOCK_HOSTGROUPS = [
+  'Linux Servers', 'Windows Servers', 'Network Devices',
+  'Storage Systems', 'Virtualization Hosts', 'DMZ Hosts',
+];
+const MOCK_SERVICEGROUPS = [
+  'HTTP Services', 'Database Services', 'Monitoring Services',
+  'Backup Services', 'Security Services',
+];
+const MOCK_BI = [
+  'my_bi_collection', 'infrastructure', 'frontend_stack',
+  'database_cluster', 'payment_platform',
+];
 
 export function updateUndoRedoButtons() {
   const u = document.getElementById('btn-undo');
@@ -89,6 +101,43 @@ export function updateInspector() {
             </button>
           </div>
         </div>
+        <div>
+          <label class="block text-gray-400 mb-1">Pfeil</label>
+          <div class="flex gap-1">
+            ${[
+              { v: 'none',    icon: '—',  title: 'Kein Pfeil'   },
+              { v: 'chevron', icon: '▶',  title: 'Chevron'      },
+              { v: 'thin',    icon: '›',  title: 'Offen (dünn)' },
+              { v: 'dot',     icon: '●',  title: 'Punkt'        },
+            ].map(o => {
+              const a = edge.arrowStyle ?? 'none';
+              const act = a === o.v;
+              return `<button data-arrow="${o.v}" title="${o.title}"
+                class="arrow-btn flex-1 py-1 rounded text-sm font-medium border transition
+                  ${act ? 'bg-[#13d38e] text-black border-[#13d38e]' : 'bg-[#1e1e1e] border-[#444] text-gray-300 hover:bg-[#333]'}">
+                ${o.icon}
+              </button>`;
+            }).join('')}
+          </div>
+        </div>
+        ${(edge.arrowStyle ?? 'none') !== 'none' ? `
+        <div>
+          <label class="block text-gray-400 mb-1">Pfeilgröße</label>
+          <div class="flex gap-1">
+            ${[
+              { v: 'sm', label: 'Kl' },
+              { v: 'md', label: 'Mi' },
+              { v: 'lg', label: 'Gr' },
+            ].map(o => {
+              const act = (edge.arrowSize ?? 'sm') === o.v;
+              return `<button data-size="${o.v}"
+                class="size-btn flex-1 py-1 rounded text-xs font-medium border transition
+                  ${act ? 'bg-[#13d38e] text-black border-[#13d38e]' : 'bg-[#1e1e1e] border-[#444] text-gray-300 hover:bg-[#333]'}">
+                ${o.label}
+              </button>`;
+            }).join('')}
+          </div>
+        </div>` : ''}
         <div class="text-xs text-gray-500">Waypoints: ${(edge.waypoints || []).length}
           <span class="ml-1 text-gray-600">(Handles auf Kante ziehen)</span>
         </div>
@@ -100,6 +149,20 @@ export function updateInspector() {
     document.querySelectorAll('.routing-btn').forEach(btn =>
       btn.addEventListener('click', () => {
         edge.routing = btn.dataset.r;
+        scheduleRedrawEdges();
+        updateInspector();
+      })
+    );
+    document.querySelectorAll('.arrow-btn').forEach(btn =>
+      btn.addEventListener('click', () => {
+        edge.arrowStyle = btn.dataset.arrow;
+        scheduleRedrawEdges();
+        updateInspector();
+      })
+    );
+    document.querySelectorAll('.size-btn').forEach(btn =>
+      btn.addEventListener('click', () => {
+        edge.arrowSize = btn.dataset.size;
         scheduleRedrawEdges();
         updateInspector();
       })
@@ -122,16 +185,33 @@ export function updateInspector() {
       </div>`;
   }
 
-  const showHostSvc = node.type === 'host' || node.type === 'service';
-  const hostSvcSuggestions = node.type === 'host' ? MOCK_HOSTS : MOCK_SERVICES;
+  const HOST_LIKE = ['host', 'hostgroup'];
+  const SVC_LIKE  = ['service', 'servicegroup'];
+  const showHostSvc = HOST_LIKE.includes(node.type) || SVC_LIKE.includes(node.type);
+  const hostSvcLabel = { host: 'Host', hostgroup: 'Host-Gruppe', service: 'Service', servicegroup: 'Service-Gruppe' }[node.type] ?? '';
+  const hostSvcPlaceholder = { host: 'z.B. web-prod-01', hostgroup: 'z.B. Linux Servers', service: 'z.B. HTTP Check', servicegroup: 'z.B. HTTP Services' }[node.type] ?? '';
+  const hostSvcSuggestions = HOST_LIKE.includes(node.type)
+    ? (node.type === 'host' ? MOCK_HOSTS : MOCK_HOSTGROUPS)
+    : (node.type === 'service' ? MOCK_SERVICES : MOCK_SERVICEGROUPS);
   const hostSvcSection = showHostSvc ? `
     <div>
-      <label class="block text-gray-400 mb-1">${node.type === 'host' ? 'Host' : 'Service'}</label>
+      <label class="block text-gray-400 mb-1">${hostSvcLabel}</label>
       <input type="text" id="inp-host-svc" list="host-svc-datalist"
-             value="${node.meta?.hostSvc || ''}" placeholder="${node.type === 'host' ? 'z.B. web-prod-01' : 'z.B. HTTP Check'}"
+             value="${node.meta?.hostSvc || ''}" placeholder="${hostSvcPlaceholder}"
              class="w-full bg-[#1e1e1e] border border-[#444444] rounded px-3 py-2 focus:outline-none focus:border-[#13d38e] text-white">
       <datalist id="host-svc-datalist">
         ${hostSvcSuggestions.map(h => `<option value="${h}">`).join('')}
+      </datalist>
+    </div>` : '';
+
+  const biSection = node.type === 'bi' ? `
+    <div>
+      <label class="block text-gray-400 mb-1">Verweis auf BI</label>
+      <input type="text" id="inp-bi-ref" list="bi-ref-datalist"
+             value="${node.meta?.biRef || ''}" placeholder="z.B. infrastructure"
+             class="w-full bg-[#1e1e1e] border border-[#444444] rounded px-3 py-2 focus:outline-none focus:border-[#13d38e] text-white">
+      <datalist id="bi-ref-datalist">
+        ${MOCK_BI.map(b => `<option value="${b}">`).join('')}
       </datalist>
     </div>` : '';
 
@@ -156,6 +236,7 @@ export function updateInspector() {
         </div>
       </div>
       ${hostSvcSection}
+      ${biSection}
       <div><label class="block text-gray-400 mb-1">Typ</label><div class="text-white">${node.type}</div></div>
       ${aggSection}
       <div>
@@ -197,6 +278,25 @@ export function updateInspector() {
   document.getElementById('inp-host-svc')?.addEventListener('input', e => {
     if (!node.meta) node.meta = {};
     node.meta.hostSvc = e.target.value;
+  });
+
+  document.getElementById('inp-bi-ref')?.addEventListener('input', e => {
+    if (!node.meta) node.meta = {};
+    node.meta.biRef = e.target.value;
+    const nodeEl = document.querySelector(`[data-id="${node.id}"]`);
+    if (nodeEl) {
+      let refEl = nodeEl.querySelector('.node-biref');
+      if (e.target.value) {
+        if (!refEl) {
+          refEl = document.createElement('div');
+          refEl.className = 'text-xs opacity-70 mt-0.5 node-biref';
+          nodeEl.appendChild(refEl);
+        }
+        refEl.textContent = '↗ ' + e.target.value;
+      } else if (refEl) {
+        refEl.remove();
+      }
+    }
   });
 
   document.getElementById('agg-type-select')?.addEventListener('change', e => {

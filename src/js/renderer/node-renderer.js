@@ -43,11 +43,13 @@ export function createNodeElement(node) {
   el.draggable             = true;
 
   if (node.type === 'aggregator') el.classList.add('rounded-2xl', 'font-semibold');
+  if (node.type === 'bi')         el.style.borderStyle = 'dashed';
 
   el.innerHTML = `
     <i data-lucide="${node.icon}" class="w-6 h-6 mb-1.5"></i>
     <div class="font-semibold node-label">${node.label}</div>
     ${node.aggType ? `<div class="text-xs opacity-80 mt-0.5 node-aggtype">(${node.aggType.toUpperCase()})</div>` : ''}
+    ${node.meta?.biRef ? `<div class="text-xs opacity-70 mt-0.5 node-biref">↗ ${node.meta.biRef}</div>` : ''}
   `;
 
   // ── Port-Dots ──────────────────────────────────────────────────────────
@@ -71,7 +73,7 @@ export function createNodeElement(node) {
         const exists = graphState.edges.some(ex => ex.from === state.connectingFrom && ex.to === node.id);
         if (!exists) {
           pushHistory();
-          graphState.edges.push({ id: `e${Date.now()}`, from: state.connectingFrom, to: node.id, routing: 'straight' });
+          graphState.edges.push({ id: `e${Date.now()}`, from: state.connectingFrom, to: node.id, routing: 'straight', arrowStyle: 'none', arrowSize: 'sm' });
           const fn = graphState.nodes.find(n => n.id === state.connectingFrom);
           logAudit('Verbindung erstellt', `${fn?.label ?? state.connectingFrom} → ${node.label}`);
           scheduleRedrawEdges();
@@ -221,7 +223,7 @@ function _startPortDrag(startEvt, fromNode, fromPort) {
 
     pushHistory();
     const tn = graphState.nodes.find(n => n.id === toNodeId);
-    const edgeDef = { id: `e${Date.now()}`, from: fromNode.id, to: toNodeId, routing: 'straight', fromPort };
+    const edgeDef = { id: `e${Date.now()}`, from: fromNode.id, to: toNodeId, routing: 'straight', fromPort, arrowStyle: 'none', arrowSize: 'sm' };
     if (toPort) edgeDef.toPort = toPort;
     graphState.edges.push(edgeDef);
     logAudit('Verbindung erstellt', `${fromNode.label} (${fromPort}) → ${tn?.label}${toPort ? ` (${toPort})` : ''}`);
