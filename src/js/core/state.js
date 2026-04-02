@@ -17,6 +17,7 @@ export const state = {
   panStartX:      0,
   panStartY:      0,
   snap:           true,
+  snapGrid:       parseInt(localStorage.getItem('bi_snap_grid') || '20', 10),
   layoutDir:      'TB',
   currentUser:    localStorage.getItem('bi_user') || 'anonymous',
   draggingWP:     null,

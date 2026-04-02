@@ -99,7 +99,7 @@ export function openEdgeCtxMenu(edge, x, y) {
     {
       icon: isStraight ? '〰️' : '✓',
       label: isStraight ? 'Gebogen (Bézier)' : '✓ Gebogen (Bézier)',
-      action: () => { pushHistory(); delete edge.routing; scheduleRedrawEdges(); }
+      action: () => { pushHistory(); delete edge.routing; delete edge.waypoints; scheduleRedrawEdges(); }
     },
     {
       icon: !isStraight ? '📐' : '✓',

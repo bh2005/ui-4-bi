@@ -57,6 +57,13 @@
 - **Rechtsklick auf Node**: Label bearbeiten, Verbinden, Aggregation-Typ, Duplizieren, Löschen
 - **Rechtsklick auf Kante**: Gebogen/Gerade, Waypoints zurücksetzen, Richtung umkehren, Löschen
 
+### Grid & Snap
+
+- Grid-Snap ein/aus per Toolbar-Button
+- **Grid-Größe konfigurierbar**: 10 / 20 / 40 / 80 px — Dropdown direkt am Snap-Button
+- Einstellung persistent in `localStorage`
+- Canvas-Hintergrund aktualisiert sich sofort (CSS-Variable `--snap-grid-px`)
+
 ### Speichern & Import/Export
 - **Speichern** → POST `/save` (FastAPI-Backend), Fallback auf localStorage
 - **Validieren** → POST `/validate`
@@ -112,3 +119,4 @@
 - [ ] Smart-Guides (Abstand-Anzeige beim Verschieben)
 - [ ] Keyboard-Shortcut-Übersicht (? Modal)
 - [ ] Versionierung / Graph-History
+- [ ] Automatisierte Tests (Jest / Pytest)

@@ -39,11 +39,12 @@
       --c-canvas-bg: #f0f0f0;
     }
 
+    :root { --snap-grid-px: 20px; }
     #canvas {
       background-image:
         linear-gradient(var(--c-grid) 1px, transparent 1px),
         linear-gradient(90deg, var(--c-grid) 1px, transparent 1px);
-      background-size: 20px 20px;
+      background-size: var(--snap-grid-px) var(--snap-grid-px);
       background-color: var(--c-canvas-bg);
     }
 
@@ -283,11 +284,20 @@
 
       <div class="w-px h-6 bg-[#444444]"></div>
 
-      <!-- Grid Snap Toggle -->
-      <button id="btn-snap" title="Grid Snap ein/aus"
-        class="snap-active bg-[#2b2b2b] border border-[#444444] rounded w-9 h-9 flex items-center justify-center hover:bg-[#3a3a3a] transition">
-        <i data-lucide="grid" class="w-4 h-4"></i>
-      </button>
+      <!-- Grid Snap Toggle + Größe -->
+      <div class="flex items-center">
+        <button id="btn-snap" title="Grid Snap ein/aus"
+          class="snap-active bg-[#2b2b2b] border border-[#444444] rounded-l w-9 h-9 flex items-center justify-center hover:bg-[#3a3a3a] transition">
+          <i data-lucide="grid" class="w-4 h-4"></i>
+        </button>
+        <select id="snap-grid-size" title="Grid-Größe"
+          class="bg-[#2b2b2b] border border-[#444444] border-l-0 rounded-r h-9 px-1 text-xs text-gray-300 focus:outline-none focus:border-[#13d38e] cursor-pointer hover:bg-[#3a3a3a] transition">
+          <option value="10">10px</option>
+          <option value="20" selected>20px</option>
+          <option value="40">40px</option>
+          <option value="80">80px</option>
+        </select>
+      </div>
 
       <!-- Preview -->
       <button id="btn-preview" title="Vorschau / Preview"
@@ -322,6 +332,12 @@
         <span id="user-badge-name" class="text-xs text-gray-300 max-w-[80px] truncate">anonymous</span>
         <span id="user-badge-role" class="text-xs ml-0.5"></span>
       </div>
+
+      <!-- Passwort ändern -->
+      <button id="btn-change-password" title="Passwort ändern" style="display:none;"
+        class="bg-[#2b2b2b] border border-[#444444] rounded w-9 h-9 flex items-center justify-center hover:bg-[#3a3a3a] transition">
+        <i data-lucide="key-round" class="w-4 h-4 text-gray-400"></i>
+      </button>
 
       <!-- Logout Button -->
       <button id="btn-logout" title="Abmelden" style="display:none;"

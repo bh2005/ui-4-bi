@@ -2,14 +2,61 @@
 const LS_TOKEN = 'bi_token';
 const LS_USER  = 'bi_user';
 
-// ── Zustand ───────────────────────────────────────────────────────────────
-let _token = localStorage.getItem(LS_TOKEN) || null;
-let _user  = JSON.parse(localStorage.getItem(LS_USER) || 'null');
+// ── JWT-Payload dekodieren (ohne Bibliothek) ──────────────────────────────
+function _decodePayload(token) {
+  try {
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(b64));
+  } catch { return null; }
+}
 
-export function getToken()    { return _token; }
+function _isExpired(token) {
+  if (!token) return true;
+  const p = _decodePayload(token);
+  return p?.exp ? p.exp * 1000 < Date.now() : false;
+}
+
+// ── Zustand ───────────────────────────────────────────────────────────────
+let _token    = localStorage.getItem(LS_TOKEN) || null;
+let _user     = JSON.parse(localStorage.getItem(LS_USER) || 'null');
+let _expTimer = null;
+
+// Abgelaufenes Token beim Start sofort verwerfen
+if (_isExpired(_token)) {
+  _token = null;
+  _user  = null;
+  localStorage.removeItem(LS_TOKEN);
+  localStorage.removeItem(LS_USER);
+}
+
+// ── showLoginModal – wird von login.js überschrieben ─────────────────────
+export let showLoginModal = () => {};
+export function registerLoginModal(fn) { showLoginModal = fn; }
+
+// ── Token-Ablauf-Timer ────────────────────────────────────────────────────
+function _scheduleExpiry(token) {
+  if (_expTimer) { clearTimeout(_expTimer); _expTimer = null; }
+  if (!token) return;
+  const payload = _decodePayload(token);
+  if (!payload?.exp) return;
+  // 60 Sekunden vor Ablauf Session löschen und Login-Modal zeigen
+  const msLeft = payload.exp * 1000 - Date.now() - 60_000;
+  if (msLeft <= 0) {
+    clearSession();
+    showLoginModal();
+    return;
+  }
+  _expTimer = setTimeout(() => {
+    clearSession();
+    showLoginModal();
+  }, msLeft);
+}
+
+// ── Öffentliche Zustandsfunktionen ────────────────────────────────────────
+export function getToken()       { return _token; }
 export function getCurrentUser() { return _user; }
-export function isLoggedIn()  { return !!_token; }
-export function isAdmin()     { return _user?.role === 'admin'; }
+export function isLoggedIn()     { return !!_token; }
+export function isAdmin()        { return _user?.role === 'admin'; }
 
 export function setSession(token, user) {
   _token = token;
@@ -21,6 +68,7 @@ export function setSession(token, user) {
     localStorage.removeItem(LS_TOKEN);
     localStorage.removeItem(LS_USER);
   }
+  _scheduleExpiry(token);
 }
 
 export function clearSession() {
@@ -34,7 +82,7 @@ export async function apiFetch(url, options = {}) {
   const res = await fetch(url, { ...options, headers });
   if (res.status === 401) {
     clearSession();
-    import('./auth.js').then(m => m.showLoginModal());
+    showLoginModal();
     throw new Error('Session abgelaufen – bitte neu anmelden');
   }
   return res;
@@ -73,7 +121,3 @@ export function logout() {
   clearSession();
   window.location.reload();
 }
-
-// ── showLoginModal – wird von login.js überschrieben ─────────────────────
-export let showLoginModal = () => {};
-export function registerLoginModal(fn) { showLoginModal = fn; }

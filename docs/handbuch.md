@@ -160,7 +160,7 @@ Toolbar → **Logout-Button** (Türpfeil-Icon, nur sichtbar wenn eingeloggt).
 | 📦↑ (grün) | **Checkmk BI Pack importieren** |
 | 📦↓ (grün) | **Als Checkmk BI Pack exportieren** |
 | Layout ▾ | Auto-Layout ausführen / Modus wählen |
-| ⊞ | Grid-Snap ein/aus |
+| ⊞ / 10px▾ | Grid-Snap ein/aus + Größen-Selector (10 / 20 / 40 / 80 px) |
 | Preview | Node-Zustände simulieren |
 | Audit | Audit-Log öffnen |
 | ☀ / 🌙 | Theme wechseln |
@@ -338,7 +338,7 @@ Ausgeblendete Nodes werden im Canvas nicht angezeigt und nicht exportiert.
 |---|---|
 | ↓ TD (Top → Bottom) | Hierarchie von oben nach unten |
 | → LR (Left → Right) | Hierarchie von links nach rechts |
-| ⊞ Am Raster ausrichten | Alle Nodes auf 20 px-Raster snappen |
+| ⊞ Am Raster ausrichten | Alle Nodes auf das konfigurierte Raster snappen |
 
 Der Algorithmus (Sugiyama-inspiriert) erkennt automatisch:
 - Topologische Schichten (Longest-Path-Ranking)

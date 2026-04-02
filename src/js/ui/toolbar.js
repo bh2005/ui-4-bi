@@ -74,16 +74,40 @@ function importJSON() {
   input.click();
 }
 
+// ── Snap-Grid-Größe setzen ────────────────────────────────────────────────
+export function setSnapGrid(size) {
+  state.snapGrid = size;
+  localStorage.setItem('bi_snap_grid', size);
+  document.documentElement.style.setProperty('--snap-grid-px', size + 'px');
+  const sel = document.getElementById('snap-grid-size');
+  if (sel) sel.value = size;
+}
+
 // ── Snap-Toggle ───────────────────────────────────────────────────────────
 function initSnapToggle() {
   const btn = document.getElementById('btn-snap');
   if (!btn) return;
-  btn.classList.add('snap-active');
+  if (state.snap) btn.classList.add('snap-active');
+
   btn.addEventListener('click', () => {
     state.snap = !state.snap;
     state.snap ? btn.classList.add('snap-active') : btn.classList.remove('snap-active');
     showToast('Grid Snap: ' + (state.snap ? 'EIN' : 'AUS'), true);
   });
+
+  // Initiale CSS-Variable setzen
+  setSnapGrid(state.snapGrid);
+
+  // Größen-Selector
+  const sel = document.getElementById('snap-grid-size');
+  if (sel) {
+    sel.value = state.snapGrid;
+    sel.addEventListener('change', () => {
+      const v = parseInt(sel.value, 10);
+      setSnapGrid(v);
+      showToast(`Grid: ${v}px`, true);
+    });
+  }
 }
 
 // ── Raster-Snap ───────────────────────────────────────────────────────────

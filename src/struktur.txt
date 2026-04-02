@@ -1,7 +1,0 @@
-cmk-bi-visual-editor/
-├── index.html
-├── main.js
-├── style.css           (optional – falls mehr als Tailwind-CDN)
-├── main.py             ← FastAPI Backend
-├── mock_data.py        ← Mock-Daten / kleine Hilfsfunktionen
-└── saved_graph.json    ← wird später erzeugt

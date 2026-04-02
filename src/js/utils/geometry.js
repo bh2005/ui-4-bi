@@ -2,7 +2,8 @@ import { state } from '../core/state.js';
 
 // ── Grid-Snap ─────────────────────────────────────────────────────────────
 export function snapToGrid(v) {
-  return state.snap ? Math.round(v / 20) * 20 : v;
+  const g = state.snapGrid || 20;
+  return state.snap ? Math.round(v / g) * g : v;
 }
 
 // ── Node-Größe (liest echte DOM-Dimensionen) ──────────────────────────────

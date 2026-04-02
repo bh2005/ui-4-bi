@@ -123,6 +123,35 @@ ui-4-bi/
 
 ---
 
+## Tests ausführen
+
+### Backend (pytest)
+```sh
+cd src/
+pip install -r requirements.txt
+cd ..
+pytest
+```
+
+### Frontend (Vitest)
+```sh
+npm install
+npm test              # einmalig
+npm run test:watch    # im Watch-Modus
+npm run test:coverage # mit Coverage-Report
+```
+
+| Test-Datei | Getestetes Modul |
+|---|---|
+| `tests/backend/test_user_store.py` | PBKDF2-Hashing, CRUD, Authentifizierung |
+| `tests/backend/test_auth_manager.py` | JWT create/decode, require_auth, require_admin |
+| `tests/backend/test_api.py` | API-Endpoints (login, users, save, validate) |
+| `tests/frontend/geometry.test.js` | snapToGrid, bezierPoint, getPortPoint |
+| `tests/frontend/cmk-converter.test.js` | exportToCMK, importFromCMK |
+| `tests/frontend/auth.test.js` | Token-Handling, apiFetch, Session |
+
+---
+
 ## Tastaturkürzel
 
 | Kürzel | Aktion |
@@ -156,4 +185,5 @@ ui-4-bi/
 | [docs/handbuch.md](docs/handbuch.md) | Benutzerhandbuch |
 | [FEATURES.md](FEATURES.md) | Feature-Übersicht & Roadmap |
 | [todo.md](todo.md) | Entwicklungsaufgaben |
+| [statistik.md](statistik.md) | Projektstatistik (LOC, Zeitleiste, Token-Schätzung) |
 | [src/changelog.txt](src/changelog.txt) | Änderungshistorie |

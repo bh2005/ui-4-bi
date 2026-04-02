@@ -8,8 +8,6 @@
 
 - [ ] **LDAP testen** — Integration mit echtem AD testen (LDAP_URL, LDAP_BIND_DN, LDAP_USER_BASE, LDAP_ADMIN_GROUP)
 - [ ] **Checkmk-Auth testen** — Login via CMK REST API verifizieren
-- [ ] **Passwort-Änderung im UI** — `/me/password`-Endpoint im Frontend (eigenes Passwort ändern)
-- [ ] **Session-Ablauf-Handling** — nach Token-Ablauf (8h) automatisch Login-Modal zeigen ohne Seitenneustart
 
 ## Offen – Phase 2 (CMK-Integration)
 
@@ -22,13 +20,23 @@
 
 ## Offen – Bugs / Kleinigkeiten
 
-- [ ] `struktur.txt` im `src/`-Ordner entfernen (veraltet)
-- [ ] Waypoint-Handles bei Bézier-Modus nach Layout-Wechsel zurücksetzen
-- [ ] Snap-Grid-Größe konfigurierbar machen (aktuell hardcodiert 20px)
+- [x] Waypoint-Handles bei Bézier-Modus nach Layout-Wechsel zurücksetzen
+- [x] Snap-Grid-Größe konfigurierbar machen (10 / 20 / 40 / 80 px, persistent)
+
+### Tests
+- [x] pytest Backend-Tests (user_store, auth_manager, API-Endpoints) — ~50 Fälle
+- [x] Vitest Frontend-Tests (geometry, cmk-converter, auth) — ~50 Fälle
+- [x] pytest.ini, vitest.config.js, package.json
 
 ---
 
 ## Erledigt
+
+### Auth & Benutzerverwaltung (Ergänzungen)
+- [x] Passwort-Änderung im UI (Key-Button, Modal, `/me/password`)
+- [x] Session-Ablauf: JWT-Expiry-Timer (60s vor Ablauf → Login-Modal automatisch)
+- [x] Abgelaufenes Token beim Start aus localStorage verworfen
+- [x] `struktur.txt` entfernt (veraltet)
 
 ### Auth & Benutzerverwaltung
 - [x] JWT-Authentifizierung (PyJWT, HS256, 8h Ablauf, Secret persistent)

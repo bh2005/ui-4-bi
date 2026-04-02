@@ -1,3 +1,42 @@
+2026-04-02  Test-Suite (pytest + Vitest)
+            tests/backend/conftest.py:       Fixtures (tmp_data, user_store, auth_client, anon_client)
+            tests/backend/test_user_store.py: 20 Tests (PBKDF2, CRUD, Duplikat, safe())
+            tests/backend/test_auth_manager.py: 9 Tests (JWT, require_auth/admin)
+            tests/backend/test_api.py:       22 Tests (login, /me, /users, /save, /validate, cycle)
+            tests/frontend/geometry.test.js:  14 Tests (snapToGrid, bezierPoint, getPortPoint)
+            tests/frontend/cmk-converter.test.js: 22 Tests (exportToCMK, importFromCMK)
+            tests/frontend/auth.test.js:     15 Tests (Token, setSession, apiFetch, 401)
+            pytest.ini, vitest.config.js, package.json (Vitest 1.6, jsdom)
+            requirements.txt: pytest>=8.0, pytest-asyncio>=0.23
+
+2026-04-02  Docs & Statistik
+            statistik.md erstellt: Zeitleiste, LOC pro Modul, Architektur-Baum,
+              Token-Schaetzung (~1-2M kombiniert ueber alle Sessions)
+            README.md: Verweis auf statistik.md ergaenzt
+            FEATURES.md: Grid-Abschnitt + Tests in Roadmap
+            handbuch.md: Snap-Grid-Groessen-Selector dokumentiert
+
+2026-04-02  Snap-Grid-Groesse konfigurierbar (10 / 20 / 40 / 80 px)
+            state.js: state.snapGrid (Startwert aus localStorage 'bi_snap_grid')
+            geometry.js: snapToGrid() nutzt state.snapGrid statt hardcodierter 20
+            toolbar.js: setSnapGrid(size) - setzt state, localStorage und CSS-Variable
+            index.html: CSS-Variable --snap-grid-px fuer Grid-Hintergrund;
+              Select-Dropdown (#snap-grid-size) direkt am Snap-Button
+
+2026-04-02  Bugfix: Waypoints beim Wechsel zu Bezier geleert
+            context-menu.js: "Gebogen (Bezier)" loescht jetzt auch edge.waypoints
+            Vorher: Auto-Layout-Waypoints (fuer straight routing) blieben auf
+            Bezier-Kanten und ergaben fehlerhafte Kurvenpfade.
+
+2026-04-02  Session-Ablauf & Passwort-Änderung
+            auth.js: JWT-Expiry-Timer (60s vor Ablauf -> Login-Modal, kein Reload)
+            auth.js: Abgelaufenes Token beim Start aus localStorage verworfen
+            auth.js: apiFetch 401-Handler ruft direkt showLoginModal() auf
+            login.js: showChangePasswordModal() - PUT /me/password
+              (nur fuer lokale Benutzer sichtbar, Mindestlaenge 6 Zeichen)
+            index.html: Key-Button (btn-change-password) neben User-Badge
+            src/struktur.txt entfernt (veraltet)
+
 2026-04-01  Benutzerverwaltung & Authentifizierung
             auth_manager.py: JWT (PyJWT, HS256, 8h), LDAP (ldap3), Checkmk REST-Auth
             user_store.py: lokale Benutzerdatenbank (data/users.json), PBKDF2-HMAC-SHA256
