@@ -1,3 +1,35 @@
+2026-04-05  Rule Packs + Dynamische Suchregeln
+            Rule Packs (Name, Pack-ID, Contact-Groups):
+            state.js: graphState.pack = { id, title, contactGroups }
+            index.html: Rule Pack Panel in der linken Sidebar (Pack-ID, Titel, Contact Groups)
+            toolbar.js: initPackPanel(), syncPackPanel() - verdrahtet Sidebar-Inputs mit graphState.pack
+            toolbar.js: exportCMK() ohne prompt() - nutzt graphState.pack
+            toolbar.js: importCMK() uebernimmt packMeta (id/title/contact_groups) nach Import
+            toolbar.js: saveGraph() speichert pack mit (Backend + localStorage)
+            app.js: pack nach /load und localStorage-Fallback wiederherstellen + syncPackPanel()
+            cmk-bi-converter.js: exportToCMK() nutzt graphState.pack als Fallback fuer packId/packTitle
+            cmk-bi-converter.js: contact_groups aus graphState.pack.contactGroups im Export
+            cmk-bi-converter.js: importFromCMK() gibt packMeta zurueck
+            main.py: optionales pack-Feld im Graph-Pydantic-Modell (wird gespeichert/geladen)
+
+            Dynamische Suchregeln (2 neue Node-Typen):
+            constants.js: hostregex (Host-Regex, #81C784, search-Icon)
+            constants.js: serviceregex (Service-Regex, #B0BEC5, file-search-Icon)
+            index.html: Palette-Eintraege fuer hostregex und serviceregex
+            node-renderer.js: Regex-Pattern wird auf dem Node als Sub-Label angezeigt
+            inspector.js: Regex-Sektion fuer hostregex (Host-Regex) und serviceregex (Host-Regex + Service-Regex)
+            inspector.js: _updateRegexOnNode() - aktualisiert Sub-Label live beim Tippen
+            cmk-bi-converter.js: hostregex -> host_search + state_of_host (pattern-basiert)
+            cmk-bi-converter.js: serviceregex -> service_search + state_of_service (host + service regex)
+            cmk-bi-converter.js: importFromCMK erkennt host_search+state_of_host -> hostregex
+            cmk-bi-converter.js: importFromCMK erkennt service_search+state_of_service -> serviceregex
+            (vs. host_search+call_a_rule -> hostgroup, service_search+call_a_rule -> servicegroup)
+
+2026-04-05  Frontend: /load eingebunden + CI Node.js 24
+            app.js: Beim Start zuerst GET /load vom Backend (apiFetch)
+              Prioritaet: Backend -> localStorage -> Demo-Graph
+            .github/workflows/tests.yml: Node.js 20 -> 24
+
 2026-04-05  Bugfix: 6 failing CI-Tests behoben (Backend)
             main.py: /me und /me/password nutzen current.get("sub") or current.get("username")
               (anonymer User hat keinen "sub"-Key)

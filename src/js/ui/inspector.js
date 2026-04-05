@@ -211,6 +211,22 @@ export async function updateInspector() {
   const hostSvcLabel = { host: 'Host', hostgroup: 'Host-Gruppe', service: 'Service', servicegroup: 'Service-Gruppe' }[node.type] ?? '';
   const hostSvcPlaceholder = { host: 'z.B. web-prod-01', hostgroup: 'z.B. Linux Servers', service: 'z.B. HTTP Check', servicegroup: 'z.B. HTTP Services' }[node.type] ?? '';
 
+  const REGEX_HOST = node.type === 'hostregex';
+  const REGEX_SVC  = node.type === 'serviceregex';
+  const regexSection = (REGEX_HOST || REGEX_SVC) ? `
+    <div>
+      <label class="block text-gray-400 mb-1">Host-Regex <span class="text-gray-600 font-normal text-xs">z.B. web-prod-.*</span></label>
+      <input type="text" id="inp-host-regex" value="${node.meta?.hostRegex || ''}" placeholder="web-prod-.*"
+             class="w-full bg-[#1e1e1e] border border-[#444444] rounded px-3 py-2 focus:outline-none focus:border-[#13d38e] text-white font-mono text-xs">
+    </div>
+    ${REGEX_SVC ? `
+    <div>
+      <label class="block text-gray-400 mb-1">Service-Regex <span class="text-gray-600 font-normal text-xs">z.B. HTTP.*</span></label>
+      <input type="text" id="inp-svc-regex" value="${node.meta?.serviceRegex || ''}" placeholder="HTTP.*"
+             class="w-full bg-[#1e1e1e] border border-[#444444] rounded px-3 py-2 focus:outline-none focus:border-[#13d38e] text-white font-mono text-xs">
+    </div>` : ''}
+  ` : '';
+
   // Vorschläge aus API laden (async, nicht-blockierend)
   let hostSvcSuggestions = [];
   if (showHostSvc) {
@@ -266,6 +282,7 @@ export async function updateInspector() {
       </div>
       ${hostSvcSection}
       ${biSection}
+      ${regexSection}
       <div><label class="block text-gray-400 mb-1">Typ</label><div class="text-white">${node.type}</div></div>
       ${aggSection}
       <div>
@@ -307,6 +324,18 @@ export async function updateInspector() {
   document.getElementById('inp-host-svc')?.addEventListener('input', e => {
     if (!node.meta) node.meta = {};
     node.meta.hostSvc = e.target.value;
+  });
+
+  document.getElementById('inp-host-regex')?.addEventListener('input', e => {
+    if (!node.meta) node.meta = {};
+    node.meta.hostRegex = e.target.value;
+    _updateRegexOnNode(node);
+  });
+
+  document.getElementById('inp-svc-regex')?.addEventListener('input', e => {
+    if (!node.meta) node.meta = {};
+    node.meta.serviceRegex = e.target.value;
+    _updateRegexOnNode(node);
   });
 
   document.getElementById('inp-bi-ref')?.addEventListener('input', e => {
@@ -360,6 +389,26 @@ export async function updateInspector() {
     if (state.selectedNode) enterConnectMode(state.selectedNode.id);
   });
   document.getElementById('btn-del-node')?.addEventListener('click', deleteSelected);
+}
+
+// ── Regex-Badge auf Node aktualisieren ───────────────────────────────────
+function _updateRegexOnNode(node) {
+  const nodeEl = document.querySelector(`[data-id="${node.id}"]`);
+  if (!nodeEl) return;
+  let el = nodeEl.querySelector('.node-regex');
+  const text = node.meta?.hostRegex
+    ? node.meta.hostRegex + (node.meta?.serviceRegex ? ' / ' + node.meta.serviceRegex : '')
+    : null;
+  if (text) {
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'text-xs opacity-60 mt-0.5 node-regex font-mono';
+      nodeEl.appendChild(el);
+    }
+    el.textContent = text;
+  } else if (el) {
+    el.remove();
+  }
 }
 
 // ── Parameter-Badge auf Node aktualisieren ────────────────────────────────

@@ -11,8 +11,8 @@
 
 ## Offen – Phase 2 (CMK-Integration)
 
-- [ ] **Rule Packs** — Regelgruppen mit Name + Contact-Group verwalten, beim Export auf `pack_id` mappen
-- [ ] **Dynamische Suchregel** — Node-Typ "Host-Suche per Regex" und "Service-Suche per Regex" statt statischer Node-Namen
+- [x] **Rule Packs** — Regelgruppen mit Name + Contact-Group verwalten, beim Export auf `pack_id` mappen
+- [x] **Dynamische Suchregel** — Node-Typ "Host-Suche per Regex" und "Service-Suche per Regex" statt statischer Node-Namen
 - [ ] **Preview-Modal** — echte States vom Backend laden (CMK Livestatus / REST-API) und auf Canvas highlighten
 - [ ] **Unresolved-Objects-Modal** — nach Validierung unbekannte Hosts/Services anzeigen
 

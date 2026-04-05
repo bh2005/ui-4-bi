@@ -1,5 +1,5 @@
 // ── Graph-Daten ───────────────────────────────────────────────────────────
-export const graphState = { nodes: [], edges: [], nextId: 1, layers: [] };
+export const graphState = { nodes: [], edges: [], nextId: 1, layers: [], pack: { id: 'default', title: 'My Pack', contactGroups: [] } };
 export const history    = { past: [], future: [] };
 export const multiSelect = new Set();   // stores node IDs
 export const auditLog    = [];

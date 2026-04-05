@@ -51,6 +51,7 @@ export function createNodeElement(node) {
     ${node.aggType ? `<div class="text-xs opacity-80 mt-0.5 node-aggtype">(${node.aggType.toUpperCase()})</div>` : ''}
     ${node.params?.length ? `<div class="text-xs opacity-60 mt-0.5 node-params font-mono">(${node.params.map(p=>'$'+p+'$').join(', ')})</div>` : ''}
     ${node.meta?.biRef ? `<div class="text-xs opacity-70 mt-0.5 node-biref">↗ ${node.meta.biRef}</div>` : ''}
+    ${node.meta?.hostRegex ? `<div class="text-xs opacity-60 mt-0.5 node-regex font-mono">${node.meta.hostRegex}${node.meta?.serviceRegex ? ' / ' + node.meta.serviceRegex : ''}</div>` : ''}
   `;
 
   // ── Port-Dots ──────────────────────────────────────────────────────────

@@ -34,6 +34,7 @@ _users = UserStore()
 class Graph(BaseModel):
     nodes: List[Dict[str, Any]]
     edges: List[Dict[str, Any]]
+    pack:  Optional[Dict[str, Any]] = None
 
 class LoginRequest(BaseModel):
     username: str

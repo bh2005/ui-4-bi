@@ -53,10 +53,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Node.js 20 einrichten
+      - name: Node.js 24 einrichten
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: npm-Cache
         uses: actions/cache@v4

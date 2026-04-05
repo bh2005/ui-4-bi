@@ -7,7 +7,7 @@ import { initConnectHandler } from './interactions/connect-handler.js';
 import { initMarqueeHandler } from './interactions/marquee-handler.js';
 import { initKeyboardHandler } from './interactions/keyboard-handler.js';
 import { initMouseHandler } from './interactions/mouse-handler.js';
-import { initToolbar } from './ui/toolbar.js';
+import { initToolbar, syncPackPanel } from './ui/toolbar.js';
 import { initAuditUI, initPreviewUI, initUserBadge, showToast } from './ui/audit-ui.js';
 import { updateUndoRedoButtons, updateInspector } from './ui/inspector.js';
 import { initLayersUI } from './ui/layers-ui.js';
@@ -15,6 +15,7 @@ import { initTheme, toggleTheme } from './core/theme.js';
 import { canvas } from './core/state.js';
 import { initLogin } from './ui/login.js';
 import { openAdminModal } from './ui/admin-ui.js';
+import { apiFetch } from './core/auth.js';
 
 // ── Audit-Log aus localStorage laden ─────────────────────────────────────
 try {
@@ -68,7 +69,25 @@ async function init() {
   const zd = document.getElementById('zoom-level');
   if (zd) zd.textContent = '100%';
 
-  // Gespeicherten Graphen laden oder Demo starten
+  // 1. Gespeicherten Graphen vom Backend laden
+  try {
+    const r = await apiFetch('/load');
+    if (r.ok) {
+      const data = await r.json();
+      if (data.nodes?.length) {
+        graphState.nodes  = data.nodes;
+        graphState.edges  = data.edges ?? [];
+        graphState.nextId = Math.max(0, ...data.nodes.map(n => n.id ?? 0)) + 1;
+        if (data.pack) { graphState.pack = data.pack; syncPackPanel(); }
+        fullRedraw();
+        showToast(`✓ Graph geladen (${data.nodes.length} Nodes)`, true);
+        updateUndoRedoButtons();
+        return;
+      }
+    }
+  } catch { /* Backend nicht erreichbar */ }
+
+  // 2. Fallback: localStorage
   const saved = localStorage.getItem('bi_graph');
   if (saved) {
     try {
@@ -77,6 +96,7 @@ async function init() {
         graphState.nodes  = data.nodes;
         graphState.edges  = data.edges;
         graphState.nextId = Math.max(0, ...data.nodes.map(n => n.id ?? 0)) + 1;
+        if (data.pack) { graphState.pack = data.pack; syncPackPanel(); }
         fullRedraw();
         showToast('Graph aus lokalem Speicher geladen', true);
         updateUndoRedoButtons();
@@ -84,6 +104,8 @@ async function init() {
       }
     } catch { /* ignorieren */ }
   }
+
+  // 3. Demo-Graph
   loadDemoGraph();
 }
 

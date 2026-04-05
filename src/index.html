@@ -379,6 +379,12 @@
         <div draggable="true" data-type="bi" class="bg-[#2b2b2b] border-2 border-dashed border-[#9C7DFF] rounded-xl p-3 text-center text-sm cursor-grab hover:bg-[#333333] font-semibold">
           Andere BI
         </div>
+        <div draggable="true" data-type="hostregex" class="bg-[#2b2b2b] border-2 border-[#81C784] rounded p-3 text-center text-sm cursor-grab hover:bg-[#333333] font-mono">
+          Host-Regex
+        </div>
+        <div draggable="true" data-type="serviceregex" class="bg-[#2b2b2b] border-2 border-[#B0BEC5] rounded-md p-3 text-center text-sm cursor-grab hover:bg-[#333333] font-mono italic">
+          Service-Regex
+        </div>
       </div>
 
       <div class="p-3 border-t border-[#3a3a3a]">
@@ -388,6 +394,30 @@
           <li class="flex items-center gap-2 ml-5 text-[#13d38e] font-medium"><i data-lucide="file-text" class="w-4 h-4"></i> Payment Platform</li>
           <li class="flex items-center gap-2 text-gray-300"><i data-lucide="folder" class="w-4 h-4"></i> Infrastructure</li>
         </ul>
+      </div>
+
+      <!-- Rule Pack Panel -->
+      <div class="border-t border-[#3a3a3a]">
+        <div class="p-3">
+          <h3 class="text-white text-xs font-bold uppercase tracking-wide mb-2">Rule Pack</h3>
+          <div class="space-y-2">
+            <div>
+              <label class="block text-xs text-gray-400 mb-0.5">Pack-ID</label>
+              <input id="pack-id" type="text" placeholder="default"
+                class="w-full bg-[#1e1e1e] border border-[#444] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#13d38e]">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-0.5">Titel</label>
+              <input id="pack-title" type="text" placeholder="My Pack"
+                class="w-full bg-[#1e1e1e] border border-[#444] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#13d38e]">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-0.5">Contact Groups <span class="text-gray-600 font-normal">(kommagetrennt)</span></label>
+              <input id="pack-contact-groups" type="text" placeholder="admins, oncall"
+                class="w-full bg-[#1e1e1e] border border-[#444] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#13d38e]">
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Layers Panel -->

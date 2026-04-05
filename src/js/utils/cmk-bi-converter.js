@@ -9,7 +9,10 @@
  */
 
 // ── Export: ui-4-bi Graph → Checkmk BI Pack JSON ─────────────────────────
-export function exportToCMK(graphState, packId = 'ui4bi', packTitle = 'UI4BI Export') {
+export function exportToCMK(graphState, packId, packTitle) {
+  const pid           = packId    || graphState.pack?.id    || 'default';
+  const ptt           = packTitle || graphState.pack?.title || 'UI4BI Export';
+  const contactGroups = graphState.pack?.contactGroups || [];
   // childrenOf[nodeId] = IDs aller Knoten, deren Status in nodeId einfließt
   const childrenOf = {};
   graphState.nodes.forEach(n => { childrenOf[n.id] = []; });
@@ -36,7 +39,7 @@ export function exportToCMK(graphState, packId = 'ui4bi', packTitle = 'UI4BI Exp
 
     rules.push({
       id:      `rule_${agg.id}`,
-      pack_id: packId,
+      pack_id: pid,
       nodes:   children.map(c => _childToNodeGen(c, allParams)),
       params:  { arguments: allParams },
       properties: {
@@ -73,10 +76,10 @@ export function exportToCMK(graphState, packId = 'ui4bi', packTitle = 'UI4BI Exp
   });
 
   return {
-    id:             packId,
-    title:          packTitle,
+    id:             pid,
+    title:          ptt,
     comment:        'Exported from UI4BI',
-    contact_groups: [],
+    contact_groups: contactGroups,
     public:         true,
     rules,
     aggregations,
@@ -153,6 +156,40 @@ function _childToNodeGen(node, parentParams = []) {
         search: { type: 'empty' },
         action: { type: 'call_a_rule', rule_id: node.meta?.biRef || node.label,
           params: { arguments: parentParams.map(p => `$${p}$`) } },
+      };
+    case 'hostregex':
+      return {
+        search: {
+          type: 'host_search',
+          conditions: {
+            host_folder:       '',
+            host_choice:       { type: 'host_name_regex', pattern: node.meta?.hostRegex || '.*' },
+            host_tags:         {},
+            host_label_groups: [],
+          },
+          refer_to: 'host',
+        },
+        action: { type: 'state_of_host', host_regex: node.meta?.hostRegex || '.*' },
+      };
+    case 'serviceregex':
+      return {
+        search: {
+          type: 'service_search',
+          conditions: {
+            host_folder:          '',
+            host_choice:          { type: 'host_name_regex', pattern: node.meta?.hostRegex || '.*' },
+            host_tags:            {},
+            host_label_groups:    [],
+            service_label_groups: [],
+            service_regex:        node.meta?.serviceRegex || '.*',
+          },
+          refer_to: 'service',
+        },
+        action: {
+          type:          'state_of_service',
+          host_regex:    node.meta?.hostRegex    || '.*',
+          service_regex: node.meta?.serviceRegex || '.*',
+        },
       };
     default:
       return {
@@ -238,12 +275,26 @@ export function importFromCMK(pack) {
       } else if (search?.type === 'host_search') {
         childId = nextId++;
         const pattern = search.conditions?.host_choice?.pattern || '';
-        nodes.push({ id: childId, type: 'hostgroup', label: pattern || 'Host-Gruppe', x: 0, y: 0,
-          color: '#66BB6A', icon: 'layers', meta: { hostSvc: pattern } });
+        if (action?.type === 'state_of_host') {
+          // Dynamische Host-Regex (kein call_a_rule → hostregex-Typ)
+          nodes.push({ id: childId, type: 'hostregex', label: pattern || 'Host-Regex', x: 0, y: 0,
+            color: '#81C784', icon: 'search', meta: { hostRegex: action.host_regex || pattern } });
+        } else {
+          nodes.push({ id: childId, type: 'hostgroup', label: pattern || 'Host-Gruppe', x: 0, y: 0,
+            color: '#66BB6A', icon: 'layers', meta: { hostSvc: pattern } });
+        }
       } else if (search?.type === 'service_search') {
         childId = nextId++;
-        nodes.push({ id: childId, type: 'servicegroup', label: 'Service-Gruppe', x: 0, y: 0,
-          color: '#78909C', icon: 'list-checks' });
+        const hostPat = search.conditions?.host_choice?.pattern || '';
+        const svcPat  = search.conditions?.service_regex || '';
+        if (action?.type === 'state_of_service') {
+          nodes.push({ id: childId, type: 'serviceregex', label: svcPat || 'Service-Regex', x: 0, y: 0,
+            color: '#B0BEC5', icon: 'file-search',
+            meta: { hostRegex: action.host_regex || hostPat, serviceRegex: action.service_regex || svcPat } });
+        } else {
+          nodes.push({ id: childId, type: 'servicegroup', label: svcPat || 'Service-Gruppe', x: 0, y: 0,
+            color: '#78909C', icon: 'list-checks' });
+        }
       }
 
       if (childId !== null) {
@@ -252,7 +303,12 @@ export function importFromCMK(pack) {
     }
   }
 
-  return { nodes, edges, nextId };
+  const packMeta = {
+    id:            pack.id    || 'default',
+    title:         pack.title || '',
+    contactGroups: pack.contact_groups || [],
+  };
+  return { nodes, edges, nextId, packMeta };
 }
 
 function _edge(seq, from, to) {

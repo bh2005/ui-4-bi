@@ -13,13 +13,13 @@ export async function saveGraph() {
   if (btn) { btn.disabled = true; btn.textContent = 'Speichern…'; }
   try {
     const r = await apiFetch('/save', { method: 'POST',
-      body: JSON.stringify({ nodes: graphState.nodes, edges: graphState.edges }) });
+      body: JSON.stringify({ nodes: graphState.nodes, edges: graphState.edges, pack: graphState.pack }) });
     const j = await r.json();
     if (j.status === 'saved') logAudit('Graph gespeichert', `${graphState.nodes.length} Nodes, ${graphState.edges.length} Edges`);
     showToast(j.status === 'saved' ? '✓ Gespeichert' : ('Fehler: ' + JSON.stringify(j)), j.status === 'saved');
   } catch {
     showToast('Backend nicht erreichbar – Graph lokal gespeichert', false);
-    localStorage.setItem('bi_graph', JSON.stringify({ nodes: graphState.nodes, edges: graphState.edges }));
+    localStorage.setItem('bi_graph', JSON.stringify({ nodes: graphState.nodes, edges: graphState.edges, pack: graphState.pack }));
     logAudit('Graph gespeichert (lokal)', `${graphState.nodes.length} Nodes, ${graphState.edges.length} Edges`);
   }
   if (btn) { btn.disabled = false; btn.textContent = 'Speichern'; }
@@ -72,6 +72,30 @@ function importJSON() {
     reader.readAsText(file);
   });
   input.click();
+}
+
+// ── Rule Pack Panel ───────────────────────────────────────────────────────
+export function syncPackPanel() {
+  const pack = graphState.pack || {};
+  const idEl = document.getElementById('pack-id');
+  const ttEl = document.getElementById('pack-title');
+  const cgEl = document.getElementById('pack-contact-groups');
+  if (idEl) idEl.value = pack.id    || '';
+  if (ttEl) ttEl.value = pack.title || '';
+  if (cgEl) cgEl.value = (pack.contactGroups || []).join(', ');
+}
+
+function initPackPanel() {
+  syncPackPanel();
+  document.getElementById('pack-id')?.addEventListener('input', e => {
+    graphState.pack.id = e.target.value.trim() || 'default';
+  });
+  document.getElementById('pack-title')?.addEventListener('input', e => {
+    graphState.pack.title = e.target.value;
+  });
+  document.getElementById('pack-contact-groups')?.addEventListener('input', e => {
+    graphState.pack.contactGroups = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+  });
 }
 
 // ── Snap-Grid-Größe setzen ────────────────────────────────────────────────
@@ -341,16 +365,14 @@ function initLayoutDropdown() {
 
 // ── CMK Export ────────────────────────────────────────────────────────────
 function exportCMK() {
-  const packId    = prompt('Pack-ID:', 'ui4bi') ?? 'ui4bi';
-  const packTitle = prompt('Pack-Titel:', 'UI4BI Export') ?? 'UI4BI Export';
-  const pack = exportToCMK(graphState, packId.trim() || 'ui4bi', packTitle.trim() || 'UI4BI Export');
+  const pack = exportToCMK(graphState);
   const data = JSON.stringify(pack, null, 2);
   const a = document.createElement('a');
   a.href     = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
-  a.download = `${packId}_bi_pack.json`;
+  a.download = `${pack.id}_bi_pack.json`;
   a.click();
   URL.revokeObjectURL(a.href);
-  logAudit('CMK BI Export', `Pack: ${packId}, ${pack.rules.length} Regeln, ${pack.aggregations.length} Aggregate`);
+  logAudit('CMK BI Export', `Pack: ${pack.id}, ${pack.rules.length} Regeln, ${pack.aggregations.length} Aggregate`);
   showToast(`✓ CMK BI Pack exportiert: ${pack.rules.length} Regeln`, true);
 }
 
@@ -367,10 +389,11 @@ function importCMK() {
         const pack = JSON.parse(ev.target.result);
         if (!pack.rules && !pack.aggregations) throw new Error('Kein gültiges CMK BI Pack (rules/aggregations fehlen)');
         pushHistory();
-        const { nodes, edges, nextId } = importFromCMK(pack);
+        const { nodes, edges, nextId, packMeta } = importFromCMK(pack);
         graphState.nodes  = nodes;
         graphState.edges  = edges;
         graphState.nextId = nextId;
+        if (packMeta) { graphState.pack = packMeta; syncPackPanel(); }
         multiSelect.clear();
         fullRedraw();
         import('./toolbar.js').then(m => m.autoLayout('TB'));
@@ -395,4 +418,5 @@ export function initToolbar() {
   document.getElementById('btn-cmk-import')?.addEventListener('click', importCMK);
   initSnapToggle();
   initLayoutDropdown();
+  initPackPanel();
 }

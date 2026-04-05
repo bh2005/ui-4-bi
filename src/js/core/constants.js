@@ -15,6 +15,8 @@ export const nodeTypes = [
   { type: 'hostgroup',   label: 'Host-Gruppe',     color: '#66BB6A', icon: 'layers'       },
   { type: 'servicegroup',label: 'Service-Gruppe',  color: '#78909C', icon: 'list-checks'  },
   { type: 'bi',          label: 'Andere BI',       color: '#9C7DFF', icon: 'share-2'      },
+  { type: 'hostregex',   label: 'Host-Regex',      color: '#81C784', icon: 'search'       },
+  { type: 'serviceregex',label: 'Service-Regex',   color: '#B0BEC5', icon: 'file-search'  },
 ];
 
 // ── Layout-Konstanten ─────────────────────────────────────────────────────
