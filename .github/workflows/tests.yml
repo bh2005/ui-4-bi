@@ -1,0 +1,79 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+
+  # ── Backend: pytest ─────────────────────────────────────────────────────
+  backend:
+    name: Backend (pytest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 3.12 einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: pip-Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('src/requirements.txt') }}
+          restore-keys: pip-
+
+      - name: Abhängigkeiten installieren
+        run: pip install -r src/requirements.txt
+
+      - name: Backend-Tests ausführen
+        env:
+          AUTH_ENABLED: "false"
+          SAVE_FILE: "/tmp/test_data/graph.json"
+          USERS_FILE: "/tmp/test_data/users.json"
+        run: pytest --tb=short -q
+
+      - name: Test-Ergebnisse hochladen (bei Fehler)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: .pytest_cache/
+
+  # ── Frontend: Vitest ────────────────────────────────────────────────────
+  frontend:
+    name: Frontend (Vitest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node.js 20 einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: npm-Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package.json') }}
+          restore-keys: npm-
+
+      - name: Abhängigkeiten installieren
+        run: npm install
+
+      - name: Frontend-Tests ausführen
+        run: npm test
+
+      - name: Coverage-Report hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/

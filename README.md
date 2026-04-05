@@ -1,5 +1,8 @@
 # CMK BI Visual Editor
 
+![Backend Tests](https://github.com/OWNER/REPO/actions/workflows/tests.yml/badge.svg?job=backend)
+![Frontend Tests](https://github.com/OWNER/REPO/actions/workflows/tests.yml/badge.svg?job=frontend)
+
 Browserbasierter, Visio-ähnlicher Editor zum grafischen Erstellen, Bearbeiten und Exportieren von **Checkmk BI-Regelwerken** — kein Build-Tool, kein Framework, pure ES-Module.
 
 ---

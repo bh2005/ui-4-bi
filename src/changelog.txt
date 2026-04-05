@@ -1,3 +1,10 @@
+2026-04-02  GitHub Actions CI (.github/workflows/tests.yml)
+            Zwei parallele Jobs: backend (pytest) + frontend (Vitest)
+            Trigger: push/PR auf main und develop
+            pip-Cache (requirements.txt-Hash) + npm-Cache (package.json-Hash)
+            Coverage-Artefakt nach jedem Lauf hochgeladen
+            Status-Badges in README.md (OWNER/REPO anpassen)
+
 2026-04-02  Test-Suite (pytest + Vitest)
             tests/backend/conftest.py:       Fixtures (tmp_data, user_store, auth_client, anon_client)
             tests/backend/test_user_store.py: 20 Tests (PBKDF2, CRUD, Duplikat, safe())
