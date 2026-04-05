@@ -22,15 +22,15 @@ describe('snapToGrid', () => {
   });
 
   it('rundet auf 20px-Raster auf', () => {
-    expect(snapToGrid(23)).toBe(20);
-    expect(snapToGrid(28)).toBe(40);  // ≥25 → nächster Gitterpunkt
+    expect(snapToGrid(23)).toBe(20);  // 23 < 30 (Mitte) → bleibt bei 20
+    expect(snapToGrid(31)).toBe(40);  // 31 > 30 (Mitte) → nächster Gitterpunkt 40
     expect(snapToGrid(40)).toBe(40);
   });
 
   it('rundet auf 20px-Raster ab', () => {
     expect(snapToGrid(0)).toBe(0);
-    expect(snapToGrid(10)).toBe(0);   // <10 → 0
-    expect(snapToGrid(11)).toBe(20);  // ≥10 → 20
+    expect(snapToGrid(9)).toBe(0);    // 9 < 10 (Mitte von 0→20) → 0
+    expect(snapToGrid(11)).toBe(20);  // 11 > 10 (Mitte) → 20
   });
 
   it('gibt Rohwert zurück wenn snap=false', () => {

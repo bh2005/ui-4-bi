@@ -7,8 +7,11 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// localStorage mocken (jsdom stellt es bereit, aber wir resetten zwischen Tests)
-beforeEach(() => localStorage.clear());
+// localStorage und fetchMock zwischen Tests zurücksetzen
+beforeEach(() => {
+  localStorage.clear();
+  fetchMock.mockClear();
+});
 
 // fetch global mocken
 const fetchMock = vi.fn();

@@ -248,7 +248,32 @@ export function importFromCMK(pack) {
       const { search, action } = gen;
       let childId = null;
 
-      if (action?.type === 'call_a_rule') {
+      // Suchmuster (host_search / service_search) immer zuerst prüfen,
+      // da diese auch action=call_a_rule haben können.
+      if (search?.type === 'host_search') {
+        childId = nextId++;
+        const pattern = search.conditions?.host_choice?.pattern || '';
+        if (action?.type === 'state_of_host') {
+          // Dynamische Host-Regex (pattern-basiert, kein Sub-Regelaufruf)
+          nodes.push({ id: childId, type: 'hostregex', label: pattern || 'Host-Regex', x: 0, y: 0,
+            color: '#81C784', icon: 'search', meta: { hostRegex: action.host_regex || pattern } });
+        } else {
+          nodes.push({ id: childId, type: 'hostgroup', label: pattern || 'Host-Gruppe', x: 0, y: 0,
+            color: '#66BB6A', icon: 'layers', meta: { hostSvc: pattern } });
+        }
+      } else if (search?.type === 'service_search') {
+        childId = nextId++;
+        const hostPat = search.conditions?.host_choice?.pattern || '';
+        const svcPat  = search.conditions?.service_regex || '';
+        if (action?.type === 'state_of_service') {
+          nodes.push({ id: childId, type: 'serviceregex', label: svcPat || 'Service-Regex', x: 0, y: 0,
+            color: '#B0BEC5', icon: 'file-search',
+            meta: { hostRegex: action.host_regex || hostPat, serviceRegex: action.service_regex || svcPat } });
+        } else {
+          nodes.push({ id: childId, type: 'servicegroup', label: svcPat || 'Service-Gruppe', x: 0, y: 0,
+            color: '#78909C', icon: 'list-checks' });
+        }
+      } else if (action?.type === 'call_a_rule') {
         if (ruleToNodeId[action.rule_id] !== undefined) {
           // Interne Regel-Referenz → Kante von Sub-Aggregator zu Eltern
           childId = ruleToNodeId[action.rule_id];
@@ -272,29 +297,6 @@ export function importFromCMK(pack) {
         childId = nextId++;
         nodes.push({ id: childId, type: 'service', label: `${action.host_regex} (remaining)`, x: 0, y: 0,
           color: '#90A4AE', icon: 'activity', meta: { hostSvc: action.host_regex } });
-      } else if (search?.type === 'host_search') {
-        childId = nextId++;
-        const pattern = search.conditions?.host_choice?.pattern || '';
-        if (action?.type === 'state_of_host') {
-          // Dynamische Host-Regex (kein call_a_rule → hostregex-Typ)
-          nodes.push({ id: childId, type: 'hostregex', label: pattern || 'Host-Regex', x: 0, y: 0,
-            color: '#81C784', icon: 'search', meta: { hostRegex: action.host_regex || pattern } });
-        } else {
-          nodes.push({ id: childId, type: 'hostgroup', label: pattern || 'Host-Gruppe', x: 0, y: 0,
-            color: '#66BB6A', icon: 'layers', meta: { hostSvc: pattern } });
-        }
-      } else if (search?.type === 'service_search') {
-        childId = nextId++;
-        const hostPat = search.conditions?.host_choice?.pattern || '';
-        const svcPat  = search.conditions?.service_regex || '';
-        if (action?.type === 'state_of_service') {
-          nodes.push({ id: childId, type: 'serviceregex', label: svcPat || 'Service-Regex', x: 0, y: 0,
-            color: '#B0BEC5', icon: 'file-search',
-            meta: { hostRegex: action.host_regex || hostPat, serviceRegex: action.service_regex || svcPat } });
-        } else {
-          nodes.push({ id: childId, type: 'servicegroup', label: svcPat || 'Service-Gruppe', x: 0, y: 0,
-            color: '#78909C', icon: 'list-checks' });
-        }
       }
 
       if (childId !== null) {
