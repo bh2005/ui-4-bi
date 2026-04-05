@@ -4,7 +4,7 @@ Beim ersten Start wird ein Admin-Benutzer (admin/admin) angelegt.
 """
 import os, json, uuid, hashlib, hmac, secrets
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 USERS_FILE = Path(os.getenv("USERS_FILE", "data/users.json"))
@@ -41,7 +41,7 @@ class UserStore:
             "role":          "admin",
             "auth_type":     "local",
             "email":         "",
-            "created_at":    datetime.utcnow().isoformat(),
+            "created_at":    datetime.now(timezone.utc).isoformat(),
             "last_login":    None,
             "active":        True,
         }
@@ -82,7 +82,7 @@ class UserStore:
             "role":          role,
             "auth_type":     auth_type,
             "email":         email,
-            "created_at":    datetime.utcnow().isoformat(),
+            "created_at":    datetime.now(timezone.utc).isoformat(),
             "last_login":    None,
             "active":        True,
         }
@@ -108,7 +108,7 @@ class UserStore:
         self._save(users)
 
     def touch_login(self, user_id: str):
-        self.update(user_id, last_login=datetime.utcnow().isoformat())
+        self.update(user_id, last_login=datetime.now(timezone.utc).isoformat())
 
     # ── Authentifizierung ──────────────────────────────────────────────────
     def verify_local(self, username: str, password: str) -> Optional[dict]:

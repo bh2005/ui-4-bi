@@ -37,7 +37,8 @@ def user_store(tmp_data):
 def auth_client(tmp_data, monkeypatch):
     """FastAPI TestClient mit AUTH_ENABLED=true."""
     monkeypatch.setenv("AUTH_ENABLED", "true")
-    import importlib, auth_manager, main as app_mod
+    import importlib, user_store as us_mod, auth_manager, main as app_mod
+    importlib.reload(us_mod)
     importlib.reload(auth_manager)
     importlib.reload(app_mod)
     from fastapi.testclient import TestClient
@@ -47,7 +48,8 @@ def auth_client(tmp_data, monkeypatch):
 @pytest.fixture()
 def anon_client(tmp_data):
     """FastAPI TestClient ohne Auth (AUTH_ENABLED=false)."""
-    import importlib, auth_manager, main as app_mod
+    import importlib, user_store as us_mod, auth_manager, main as app_mod
+    importlib.reload(us_mod)
     importlib.reload(auth_manager)
     importlib.reload(app_mod)
     from fastapi.testclient import TestClient

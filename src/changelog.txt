@@ -1,3 +1,15 @@
+2026-04-05  Bugfix: 6 failing CI-Tests behoben (Backend)
+            main.py: /me und /me/password nutzen current.get("sub") or current.get("username")
+              (anonymer User hat keinen "sub"-Key)
+            main.py: POST /users gibt 409 statt 400 bei Duplikat-Benutzernamen
+            main.py: DELETE /users/{id} gibt 409 statt 400 beim Loeschen des letzten Admins
+            main.py: /me/password von POST auf PUT geaendert; old_password-Pruefung hinzugefuegt
+            main.py: GET /load Endpoint hinzugefuegt (liest SAVE_FILE zurueck)
+            conftest.py: user_store vor main in beiden Fixtures neu laden
+              (USERS_FILE-Default-Parameter wurde sonst nicht aktualisiert)
+            user_store.py: datetime.utcnow() -> datetime.now(timezone.utc) (Deprecation-Fix)
+            Ergebnis: 56/56 Backend-Tests gruen
+
 2026-04-02  GitHub Actions CI (.github/workflows/tests.yml)
             Zwei parallele Jobs: backend (pytest) + frontend (Vitest)
             Trigger: push/PR auf main und develop

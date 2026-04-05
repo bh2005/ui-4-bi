@@ -110,7 +110,8 @@ def login(body: LoginRequest):
 @app.get("/me")
 def me(current: dict = Depends(require_auth)):
     """Gibt den aktuell eingeloggten Benutzer zurück."""
-    u = _users.get_by_username(current["sub"])
+    username = current.get("sub") or current.get("username")
+    u = _users.get_by_username(username) if username else None
     if u:
         return UserStore.safe(u)
     # Externe User (LDAP/CMK) die nicht (mehr) in der DB sind
@@ -139,7 +140,8 @@ def create_user(body: UserCreate, _: dict = Depends(require_admin)):
         role=body.role, auth_type=body.auth_type, email=body.email,
     )
     if err:
-        raise HTTPException(400, err)
+        status = 409 if "bereits vergeben" in err else 400
+        raise HTTPException(status, err)
     return UserStore.safe(user)
 
 
@@ -160,18 +162,22 @@ def delete_user(user_id: str, _: dict = Depends(require_admin)):
         raise HTTPException(404, "Benutzer nicht gefunden")
     admins = [u for u in _users.get_all() if u["role"] == "admin" and u.get("active", True)]
     if target["role"] == "admin" and len(admins) <= 1:
-        raise HTTPException(400, "Letzten Administrator kann nicht gelöscht werden")
+        raise HTTPException(409, "Letzten Administrator kann nicht gelöscht werden")
     _users.delete(user_id)
 
 
-@app.post("/me/password")
+@app.put("/me/password")
 def change_own_password(body: dict, current: dict = Depends(require_auth)):
     """Benutzer ändert sein eigenes Passwort."""
-    u = _users.get_by_username(current["sub"])
+    username = current.get("sub") or current.get("username")
+    u = _users.get_by_username(username) if username else None
     if not u or u.get("auth_type") != "local":
         raise HTTPException(400, "Passwort nur für lokale Benutzer änderbar")
     if not body.get("new_password"):
         raise HTTPException(400, "Neues Passwort fehlt")
+    old_pw = body.get("old_password", "")
+    if old_pw and not _users.verify_local(username, old_pw):
+        raise HTTPException(400, "Altes Passwort falsch")
     _users.update(u["id"], password=body["new_password"])
     return {"ok": True}
 
@@ -182,6 +188,14 @@ def save_graph(graph: Graph, _: dict = Depends(require_auth)):
     with SAVE_FILE.open("w", encoding="utf-8") as f:
         json.dump(graph.model_dump(), f, indent=2)
     return {"status": "saved"}
+
+
+@app.get("/load")
+def load_graph(_: dict = Depends(require_auth)):
+    if not SAVE_FILE.exists():
+        raise HTTPException(404, "Kein gespeicherter Graph gefunden")
+    with SAVE_FILE.open(encoding="utf-8") as f:
+        return json.load(f)
 
 
 # ── Graph validieren ──────────────────────────────────────────────────────
