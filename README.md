@@ -29,7 +29,7 @@ Beim ersten Start wird automatisch ein Benutzer `admin` / `admin` angelegt — s
 
 | Variable | Standard | Beschreibung |
 |---|---|---|
-| `AUTH_ENABLED` | `false` | Auth aktivieren (`true` = Login erforderlich) |
+| `AUTH_ENABLED` | `false` | Auth aktivieren (`true` = Login erforderlich; Standard: anonymous-Admin) |
 | `LDAP_URL` | — | z. B. `ldap://dc.example.com:389` |
 | `LDAP_BIND_DN` | — | Service-Account-DN |
 | `LDAP_BIND_PASSWORD` | — | Service-Account-Passwort |
@@ -74,6 +74,8 @@ docker compose up --build
 - **Import von Checkmk BI Packs** mit automatischem Layout
 - Alle CMK Node-Typen: `state_of_host`, `state_of_service`, `host_search`, `service_search`, `call_a_rule`
 - Alle Aggregations-Funktionen: `worst`, `best`, `count_ok`
+- **Rule Packs** — Pack-ID, Titel und Contact-Groups direkt in der Sidebar pflegen; werden beim Export korrekt eingebettet
+- **Dynamische Suchregeln** — Node-Typen `hostregex` und `serviceregex` mit Regex-Pattern; werden beim Export als `host_search`/`service_search` ausgegeben und beim Import erkannt
 
 ### Authentifizierung & Benutzerverwaltung
 - **Lokale Benutzer** (PBKDF2-SHA256, data/users.json)
@@ -190,3 +192,20 @@ npm run test:coverage # mit Coverage-Report
 | [todo.md](todo.md) | Entwicklungsaufgaben |
 | [statistik.md](statistik.md) | Projektstatistik (LOC, Zeitleiste, Token-Schätzung) |
 | [src/changelog.txt](src/changelog.txt) | Änderungshistorie |
+
+---
+
+## Aktuelle Änderungen
+
+### 2026-04-05
+- **Rule Packs** — Pack-ID, Titel und Contact-Groups in der Sidebar; werden beim CMK-Export und -Import vollständig berücksichtigt
+- **Dynamische Suchregeln** — neue Node-Typen `hostregex` / `serviceregex` mit Live-Vorschau im Inspector; Round-trip-fähig (Export + Import)
+- **CI** — Node.js 24, 56/56 Backend-Tests grün
+
+### 2026-04-02
+- **GitHub Actions CI** — parallele Jobs für Backend (pytest) und Frontend (Vitest), Coverage-Artefakt, Status-Badges
+
+### Frühere Highlights
+- JWT-Authentifizierung (lokal · LDAP · Checkmk-Auth-Kette)
+- Undo/Redo (100 Schritte), Auto-Layout (TD/LR/Grid), Ports, Waypoints
+- Docker-ready (nginx + FastAPI), Health-Probes
