@@ -1,6 +1,6 @@
 # To-Do – CMK BI Visual Editor
 
-> Stand: 2026-04-01 | Ziel-MVP: Ende April / Mitte Mai 2026
+> Stand: 2026-04-06 | Ziel-MVP: Ende April / Mitte Mai 2026
 
 ---
 
@@ -11,8 +11,8 @@
 
 ## Offen – Phase 2 (CMK-Integration)
 
-- [x] **Rule Packs** — Regelgruppen mit Name + Contact-Group verwalten, beim Export auf `pack_id` mappen
-- [x] **Dynamische Suchregel** — Node-Typ "Host-Suche per Regex" und "Service-Suche per Regex" statt statischer Node-Namen
+- [x] **Rule Packs** — Regelgruppen mit Name + Contact-Group verwalten, beim Export auf `pack_id` mappen ✅ (2026-04-05)
+- [x] **Dynamische Suchregel** — Node-Typ `hostregex` / `serviceregex` mit Regex-Pattern; Export als `host_search`/`service_search` ✅ (2026-04-05)
 - [ ] **Preview-Modal** — echte States vom Backend laden (CMK Livestatus / REST-API) und auf Canvas highlighten
 - [ ] **Unresolved-Objects-Modal** — nach Validierung unbekannte Hosts/Services anzeigen
 
