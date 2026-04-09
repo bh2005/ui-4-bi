@@ -4,11 +4,23 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['tests/frontend/**/*.test.js'],
-    globals: false,
+    globals: true,
+
     coverage: {
       provider: 'v8',
-      include: ['src/js/utils/**', 'src/js/core/auth.js'],
-      reporter: ['text', 'html'],
+      reporter: ['text', 'json-summary', 'html'],
+      include: [
+        'src/js/utils/**',
+        'src/js/core/**',
+      ],
+      exclude: [
+        'src/js/core/state.js',   // DOM-abhängig, kein Unit-Test sinnvoll
+      ],
+      thresholds: {
+        lines:     60,
+        functions: 60,
+        branches:  60,
+      },
     },
   },
 });

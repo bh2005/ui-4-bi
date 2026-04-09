@@ -1,51 +1,65 @@
-name: Tests
+name: CI – Tests & Coverage
 
 on:
   push:
     branches: [main, develop]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "requirements-dev.txt"
+      - "vitest.config.js"
+      - "package.json"
+      - ".github/workflows/tests.yml"
   pull_request:
     branches: [main, develop]
 
 jobs:
 
-  # ── Backend: pytest ─────────────────────────────────────────────────────
+  # ── Backend: pytest ───────────────────────────────────────────────────────
   backend:
-    name: Backend (pytest)
+    name: Backend (pytest – Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Python 3.12 einrichten
+      - name: Python ${{ matrix.python-version }} einrichten
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-
-      - name: pip-Cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ hashFiles('src/requirements.txt') }}
-          restore-keys: pip-
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
 
       - name: Abhängigkeiten installieren
-        run: pip install -r src/requirements.txt
+        run: pip install -r requirements-dev.txt
 
-      - name: Backend-Tests ausführen
+      - name: Backend-Tests (Coverage ≥ 70 %)
         env:
           AUTH_ENABLED: "false"
-          SAVE_FILE: "/tmp/test_data/graph.json"
-          USERS_FILE: "/tmp/test_data/users.json"
-        run: pytest --tb=short -q
+          SAVE_FILE:    "/tmp/bi_test/graph.json"
+          USERS_FILE:   "/tmp/bi_test/users.json"
+        run: |
+          pytest \
+            --cov \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-fail-under=70 \
+            -v
 
-      - name: Test-Ergebnisse hochladen (bei Fehler)
-        if: failure()
+      - name: Coverage-Artefakt hochladen (nur 3.13)
+        if: matrix.python-version == '3.13' && always()
         uses: actions/upload-artifact@v4
         with:
-          name: pytest-results
-          path: .pytest_cache/
+          name: coverage-backend
+          path: coverage.xml
+          retention-days: 14
 
-  # ── Frontend: Vitest ────────────────────────────────────────────────────
+  # ── Frontend: Vitest ──────────────────────────────────────────────────────
   frontend:
     name: Frontend (Vitest)
     runs-on: ubuntu-latest
@@ -68,12 +82,35 @@ jobs:
       - name: Abhängigkeiten installieren
         run: npm install
 
-      - name: Frontend-Tests ausführen
-        run: npm test
+      - name: Frontend-Tests (Vitest + Coverage)
+        run: npm run test:coverage
 
-      - name: Coverage-Report hochladen
+      - name: Coverage-Artefakt hochladen
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: coverage-frontend
           path: coverage/
+          retention-days: 14
+
+  # ── Docker: Build-Test ────────────────────────────────────────────────────
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Frontend-Image bauen
+        run: docker build -t ui4bi-frontend:ci -f Dockerfile .
+
+      - name: Backend-Image bauen
+        run: docker build -t ui4bi-backend:ci -f Dockerfile.backend .
+
+      - name: Stack hochfahren und Healthcheck
+        run: |
+          docker compose up -d
+          sleep 10
+          curl -sf http://localhost:8091/index.html || exit 1
+          docker compose down

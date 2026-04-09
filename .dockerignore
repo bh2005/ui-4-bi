@@ -1,10 +1,22 @@
 .git
 .gitignore
+.github/
+
+# Entwickler-Dateien
 todo.md
 docs/
-*.md
-docker/
+tests/
+pyproject.toml
+requirements-dev.txt
+vitest.config.js
+package.json
+package-lock.json
+
+# Daten (Volume)
 data/
+
+# Python-Artefakte
 __pycache__/
 *.pyc
 *.pyo
+.pytest_cache/
