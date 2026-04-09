@@ -1,6 +1,6 @@
 // ── auth.js – Token-Management & API-fetch-Wrapper ────────────────────────
 const LS_TOKEN = 'bi_token';
-const LS_USER  = 'bi_user';
+export const LS_USER = 'bi_user';
 
 // ── JWT-Payload dekodieren (ohne Bibliothek) ──────────────────────────────
 function _decodePayload(token) {

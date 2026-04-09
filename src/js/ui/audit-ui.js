@@ -1,4 +1,5 @@
 import { state, auditLog, graphState } from '../core/state.js';
+import { LS_USER } from '../core/auth.js';
 import { escHtml } from '../utils/dom-utils.js';
 
 // ── Toast ─────────────────────────────────────────────────────────────────
@@ -29,7 +30,7 @@ export function updateUserBadge() {
 export function initUserBadge() {
   updateUserBadge();
 
-  if (!localStorage.getItem('bi_user')) {
+  if (!localStorage.getItem(LS_USER)) {
     const banner = document.getElementById('username-banner');
     if (banner) banner.style.display = 'flex';
   }
@@ -40,7 +41,7 @@ export function initUserBadge() {
     const name = inp.value.trim();
     if (!name) return;
     state.currentUser = name;
-    localStorage.setItem('bi_user', name);
+    localStorage.setItem(LS_USER, name);
     updateUserBadge();
     const banner = document.getElementById('username-banner');
     if (banner) banner.style.display = 'none';
@@ -65,7 +66,7 @@ export function initUserBadge() {
     if (!inp) return;
     const newName = inp.value.trim() || state.currentUser;
     state.currentUser = newName;
-    localStorage.setItem('bi_user', newName);
+    localStorage.setItem(LS_USER, newName);
     updateUserBadge();
     const popover = document.getElementById('user-popover');
     if (popover) popover.style.display = 'none';

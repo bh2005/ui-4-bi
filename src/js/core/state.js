@@ -1,3 +1,5 @@
+import { LS_USER } from './auth.js';
+
 // ── Graph-Daten ───────────────────────────────────────────────────────────
 export const graphState = { nodes: [], edges: [], nextId: 1, layers: [], pack: { id: 'default', title: 'My Pack', contactGroups: [] } };
 export const history    = { past: [], future: [] };
@@ -19,7 +21,7 @@ export const state = {
   snap:           true,
   snapGrid:       parseInt(localStorage.getItem('bi_snap_grid') || '20', 10),
   layoutDir:      'TB',
-  currentUser:    localStorage.getItem('bi_user') || 'anonymous',
+  currentUser:    localStorage.getItem(LS_USER) || 'anonymous',
   draggingWP:     null,
   spacePressed:   false,
   marqueeActive:  false,
