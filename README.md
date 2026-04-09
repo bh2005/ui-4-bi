@@ -7,6 +7,10 @@ Grafisches Erstellen, Bearbeiten und Exportieren von Checkmk BI-Regelwerken — 
 ![Backend Tests](https://github.com/bh2005/ui-4-bi/actions/workflows/tests.yml/badge.svg?job=backend)
 ![Frontend Tests](https://github.com/bh2005/ui-4-bi/actions/workflows/tests.yml/badge.svg?job=frontend)
 [![Features](https://img.shields.io/badge/Features-ansehen-orange)](FEATURES.md)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-ansehen-brightgreen)](https://ui-4-bi.onrender.com/)
+
+
+
 
 ---
 
