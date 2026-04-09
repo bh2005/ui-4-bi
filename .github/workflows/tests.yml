@@ -10,6 +10,12 @@ on:
       - "requirements-dev.txt"
       - "vitest.config.js"
       - "package.json"
+      - "package-lock.json"
+      - "Dockerfile"
+      - "Dockerfile.backend"
+      - ".dockerignore"
+      - "docker/**"
+      - "docker-compose.yml"
       - ".github/workflows/tests.yml"
   pull_request:
     branches: [main, develop]

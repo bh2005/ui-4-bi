@@ -376,6 +376,12 @@ def get_bi_pack(pack_id: str, _: dict = Depends(require_auth)):
     return r.json()
 
 
+@app.get("/health/live")
+def health_live():
+    """Liveness-Probe für Docker Healthcheck."""
+    return {"status": "ok"}
+
+
 @app.get("/tree")
 def get_tree():
     return {"name": "BI Rules", "children": [

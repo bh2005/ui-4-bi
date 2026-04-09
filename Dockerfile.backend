@@ -20,8 +20,7 @@ COPY src/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Source-Code
-COPY src/main.py .
-COPY src/js/core/auth.js* ./
+COPY src/main.py src/auth_manager.py src/user_store.py ./
 
 # Datenverzeichnis anlegen
 RUN mkdir -p data && chown -R bi:bi /app/data
