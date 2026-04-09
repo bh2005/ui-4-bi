@@ -11,7 +11,7 @@ vi.mock('../../src/js/core/state.js', () => ({
   state: { snap: true, snapGrid: 20 },
 }));
 
-import { snapToGrid, bezierPoint, getPortPoint } from '../../src/js/utils/geometry.js';
+import { snapToGrid, bezierPoint, getPortPoint, getEdgePointToTarget, getEdgePoint } from '../../src/js/utils/geometry.js';
 import { state } from '../../src/js/core/state.js';
 
 
@@ -135,5 +135,71 @@ describe('getPortPoint', () => {
     const pt = getPortPoint(node, 'center');
     expect(pt.x).toBeCloseTo(170);
     expect(pt.y).toBeCloseTo(225);
+  });
+});
+
+
+// Fallback-Größe: getNodeSize → { w:140, h:50 } wenn kein DOM-Element vorhanden
+// node = { x:100, y:200 } → center = { cx:170, cy:225 }
+
+describe('getEdgePointToTarget', () => {
+  const node = { x: 100, y: 200, id: 'n1' };
+
+  it('fast identischer Punkt → unterer Mittelpunkt', () => {
+    const pt = getEdgePointToTarget(node, 170, 225.0001);
+    expect(pt.x).toBeCloseTo(170);
+    expect(pt.y).toBe(250); // node.y + nh
+  });
+
+  it('Ziel rechts (|dx|>|dy|) → rechte Kante', () => {
+    const pt = getEdgePointToTarget(node, 400, 225); // dx=230, dy=0
+    expect(pt.x).toBe(240); // node.x + nw
+    expect(pt.y).toBeCloseTo(225);
+  });
+
+  it('Ziel links (|dx|>|dy|) → linke Kante', () => {
+    const pt = getEdgePointToTarget(node, 0, 225); // dx=-170, dy=0
+    expect(pt.x).toBe(100); // node.x
+    expect(pt.y).toBeCloseTo(225);
+  });
+
+  it('Ziel unten (|dy|>|dx|) → untere Kante', () => {
+    const pt = getEdgePointToTarget(node, 170, 400); // dx=0, dy=175
+    expect(pt.y).toBe(250); // node.y + nh
+    expect(pt.x).toBeCloseTo(170);
+  });
+
+  it('Ziel oben (|dy|>|dx|) → obere Kante', () => {
+    const pt = getEdgePointToTarget(node, 170, 50); // dx=0, dy=-175
+    expect(pt.y).toBe(200); // node.y
+    expect(pt.x).toBeCloseTo(170);
+  });
+
+  it('diagonaler Schnittpunkt wird auf Kante begrenzt', () => {
+    const pt = getEdgePointToTarget(node, 500, 500);
+    expect(pt.x).toBeGreaterThanOrEqual(100);
+    expect(pt.x).toBeLessThanOrEqual(240);
+    expect(pt.y).toBeGreaterThanOrEqual(200);
+    expect(pt.y).toBeLessThanOrEqual(250);
+  });
+});
+
+
+describe('getEdgePoint', () => {
+  const nodeA = { x: 100, y: 200, id: 'a' };
+  const nodeB = { x: 300, y: 200, id: 'b' };
+
+  it('gibt Punkt auf der Kante von nodeA in Richtung Zentrum nodeB zurück', () => {
+    const pt = getEdgePoint(nodeA, nodeB);
+    // nodeB-Zentrum bei (370, 225) → nodeA rechte Kante
+    expect(pt.x).toBe(240);
+    expect(pt.y).toBeCloseTo(225);
+  });
+
+  it('Knoten übereinander → Punkt auf unterer Kante', () => {
+    const above = { x: 100, y: 50,  id: 'u' };
+    const below = { x: 100, y: 200, id: 'v' };
+    const pt = getEdgePoint(above, below);
+    expect(pt.y).toBe(100); // above.y + nh
   });
 });

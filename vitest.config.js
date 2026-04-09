@@ -14,7 +14,10 @@ export default defineConfig({
         'src/js/core/**',
       ],
       exclude: [
-        'src/js/core/state.js',   // DOM-abhängig, kein Unit-Test sinnvoll
+        'src/js/core/state.js',    // DOM-abhängig (Canvas-Refs, Cytoscape)
+        'src/js/core/actions.js',  // Importiert Renderer/Inspector – voller DOM-Chain
+        'src/js/core/theme.js',    // Direkte document.documentElement-Manipulation
+        'src/js/core/constants.js',// Reine Konfigurationsdaten, keine Logik
       ],
       thresholds: {
         lines:     60,
