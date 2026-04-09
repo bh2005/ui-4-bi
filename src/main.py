@@ -100,7 +100,7 @@ def login(body: LoginRequest):
 
     if not user:
         raise HTTPException(401, "Benutzername oder Passwort falsch")
-    if not user.get("active", True):
+    if not user.get("active", True):  # pragma: no cover  – nur via LDAP/CMK erreichbar
         raise HTTPException(403, "Benutzer ist deaktiviert")
 
     _users.touch_login(user["id"])

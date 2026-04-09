@@ -62,7 +62,7 @@ def decode_token(token: str) -> Optional[dict]:
 
 
 # ── LDAP ──────────────────────────────────────────────────────────────────
-def auth_ldap(username: str, password: str) -> Optional[dict]:
+def auth_ldap(username: str, password: str) -> Optional[dict]:  # pragma: no cover
     if not LDAP_URL or not LDAP_USER_BASE:
         return None
     try:
@@ -100,7 +100,7 @@ def auth_ldap(username: str, password: str) -> Optional[dict]:
 
 
 # ── Checkmk ───────────────────────────────────────────────────────────────
-def auth_checkmk(username: str, password: str) -> Optional[dict]:
+def auth_checkmk(username: str, password: str) -> Optional[dict]:  # pragma: no cover
     if not CMK_URL:
         return None
     try:

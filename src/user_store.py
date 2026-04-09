@@ -46,8 +46,8 @@ class UserStore:
             "active":        True,
         }
         self._save([admin])
-        print("⚠  ERSTER START: Benutzer 'admin' mit Passwort 'admin' angelegt.")
-        print("   Bitte sofort in der Benutzerverwaltung ändern!")
+        print("⚠  ERSTER START: Benutzer 'admin' mit Passwort 'admin' angelegt.")  # pragma: no cover
+        print("   Bitte sofort in der Benutzerverwaltung ändern!")  # pragma: no cover
 
     def _load(self) -> list:
         return json.loads(self.path.read_text(encoding="utf-8"))

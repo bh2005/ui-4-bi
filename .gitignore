@@ -1,5 +1,43 @@
-data/
+# =============================================
+# UI-4-BI – .gitignore
+# =============================================
+
+# --- Node.js ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# --- Python ---
 __pycache__/
-*.pyc
-*.pyo
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# --- Test / Coverage ---
+coverage/
+.nyc_output/
+
+# --- Laufzeit-Daten (kein Commit) ---
+data/
 saved_graph.json
+
+# --- Umgebungsvariablen ---
+.env
+.env.local
+.env.*.local
+
+# --- Editor / IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
