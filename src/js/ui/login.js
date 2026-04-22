@@ -109,11 +109,11 @@ export function _updateBadge(user) {
   const roleEl = document.getElementById('user-badge-role');
   if (roleEl) roleEl.textContent = user?.role === 'admin' ? '⚙' : '';
   const adminBtn = document.getElementById('btn-admin');
-  if (adminBtn) adminBtn.style.display = (user?.role === 'admin') ? '' : 'none';
+  if (adminBtn) adminBtn.style.display = (user?.role === 'admin') ? 'flex' : 'none';
   const logoutBtn = document.getElementById('btn-logout');
-  if (logoutBtn) logoutBtn.style.display = user ? '' : 'none';
+  if (logoutBtn) logoutBtn.style.display = user ? 'flex' : 'none';
   const pwBtn = document.getElementById('btn-change-password');
-  if (pwBtn) pwBtn.style.display = (user && user.auth_type === 'local') ? '' : 'none';
+  if (pwBtn) pwBtn.style.display = (user && user.auth_type === 'local') ? 'flex' : 'none';
 }
 
 // ── Passwort-Änderung Modal ───────────────────────────────────────────────
@@ -244,7 +244,7 @@ export async function initLogin() {
   // Logout-Button verdrahten
   const logoutBtn = document.getElementById('btn-logout');
   if (logoutBtn) {
-    logoutBtn.style.display = '';
+    logoutBtn.style.display = 'flex';
     logoutBtn.addEventListener('click', () => {
       if (confirm('Wirklich abmelden?')) logout();
     });

@@ -4,42 +4,81 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>UI4BI – Visual BI Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
-    /* ── Theme Variables ──────────────────────────────────────────────── */
+    /* ── Theme Variables (Checkmk / nagvis2-Palette) ─────────────────── */
     :root {
-      --c-bg:        #1a1a1a;
-      --c-surface:   #242424;
-      --c-panel:     #1e1e1e;
-      --c-el:        #2b2b2b;
-      --c-el-hover:  #333333;
-      --c-border:    #3a3a3a;
-      --c-border2:   #444444;
-      --c-text:      #f3f4f6;
-      --c-text2:     #d1d5db;
-      --c-text3:     #9ca3af;
-      --c-text4:     #6b7280;
-      --c-grid:      #33333322;
-      --c-canvas-bg: #1a1a1a;
+      /* Backgrounds — Checkmk blaugraue Dunkel-Palette */
+      --c-bg:        #1c2228;
+      --c-surface:   #262f38;
+      --c-panel:     #20272e;
+      --c-el:        #303946;
+      --c-el-hover:  #3a4454;
+      --c-border:    #3a4555;
+      --c-border2:   #48566a;
+      --c-text:      #dcdcdc;
+      --c-text2:     #9daabb;
+      --c-text3:     #6e7f94;
+      --c-text4:     #4d5c6e;
+      --c-grid:      #ffffff14;
+      --c-canvas-bg: #1c2228;
+      /* Status — Checkmk-Palette (identisch mit nagvis2) */
+      --ok:           #13d389;
+      --ok-bg:        rgba(19,211,137,0.12);
+      --ok-border:    rgba(19,211,137,0.22);
+      --warn:         #ffd703;
+      --warn-bg:      rgba(255,215,3,0.12);
+      --warn-border:  rgba(255,215,3,0.28);
+      --crit:         #c83232;
+      --crit-bg:      rgba(200,50,50,0.14);
+      --crit-border:  rgba(200,50,50,0.30);
+      --unkn:         #9e9e9e;
+      --unkn-bg:      rgba(158,158,158,0.10);
+      --unkn-border:  rgba(158,158,158,0.20);
+      --ack-color:    #e6a817;
+      --downtime:     #0667c1;
+      /* Accent */
+      --acc:          #13d389;
+      --accent:       var(--acc);
     }
     html.light {
-      --c-bg:        #ebebeb;
+      --c-bg:        #e8e8ee;
       --c-surface:   #ffffff;
-      --c-panel:     #f4f4f4;
-      --c-el:        #e2e2e2;
-      --c-el-hover:  #d0d0d0;
-      --c-border:    #d0d0d0;
-      --c-border2:   #c0c0c0;
-      --c-text:      #111111;
-      --c-text2:     #333333;
-      --c-text3:     #555555;
-      --c-text4:     #777777;
-      --c-grid:      #00000018;
-      --c-canvas-bg: #f0f0f0;
+      --c-panel:     #f2f2f6;
+      --c-el:        #dcdce0;
+      --c-el-hover:  #cacace;
+      --c-border:    #dcdce0;
+      --c-border2:   #aaaaaa;
+      --c-text:      #333333;
+      --c-text2:     #555555;
+      --c-text3:     #767676;
+      --c-text4:     #999999;
+      --c-grid:      #00000014;
+      --c-canvas-bg: #e8e8ee;
+      /* Status — Light Mode */
+      --ok:           #13d389;
+      --ok-bg:        rgba(19,211,137,0.12);
+      --ok-border:    rgba(19,211,137,0.30);
+      --warn:         #b08000;
+      --warn-bg:      rgba(176,128,0,0.12);
+      --warn-border:  rgba(176,128,0,0.35);
+      --crit:         #c83232;
+      --crit-bg:      rgba(200,50,50,0.10);
+      --crit-border:  rgba(200,50,50,0.28);
+      --unkn:         #757575;
+      --unkn-bg:      rgba(117,117,117,0.10);
+      --unkn-border:  rgba(117,117,117,0.22);
+      --ack-color:    #b08000;
+      --downtime:     #0c81ee;
+      --acc:          #13d389;
+      --accent:       var(--acc);
     }
 
     :root { --snap-grid-px: 20px; }
+    body { font-family: 'Roboto', 'Segoe UI', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
     #canvas {
       background-image:
         linear-gradient(var(--c-grid) 1px, transparent 1px),
@@ -50,16 +89,23 @@
 
     /* ── Light Theme Overrides ────────────────────────────────────────── */
     html.light body { background-color: var(--c-bg) !important; color: var(--c-text) !important; }
-    html.light .bg-\[\#1a1a1a\] { background-color: var(--c-bg) !important; }
-    html.light .bg-\[\#1e1e1e\] { background-color: var(--c-panel) !important; }
-    html.light .bg-\[\#242424\] { background-color: var(--c-surface) !important; }
-    html.light .bg-\[\#2b2b2b\] { background-color: var(--c-el) !important; }
-    html.light .bg-\[\#333333\] { background-color: var(--c-el-hover) !important; }
+    html.light .bg-\[\#1a1a1a\],
+    html.light .bg-\[\#1c2228\] { background-color: var(--c-bg) !important; }
+    html.light .bg-\[\#1e1e1e\],
+    html.light .bg-\[\#20272e\] { background-color: var(--c-panel) !important; }
+    html.light .bg-\[\#242424\],
+    html.light .bg-\[\#262f38\] { background-color: var(--c-surface) !important; }
+    html.light .bg-\[\#2b2b2b\],
+    html.light .bg-\[\#303946\] { background-color: var(--c-el) !important; }
+    html.light .bg-\[\#333333\],
+    html.light .bg-\[\#3a4454\] { background-color: var(--c-el-hover) !important; }
     html.light .hover\:bg-\[\#3a3a3a\]:hover,
     html.light .hover\:bg-\[\#333333\]:hover,
     html.light .hover\:bg-\[\#333\]:hover { background-color: var(--c-el-hover) !important; }
-    html.light .border-\[\#3a3a3a\] { border-color: var(--c-border) !important; }
+    html.light .border-\[\#3a3a3a\],
+    html.light .border-\[\#3a4555\] { border-color: var(--c-border) !important; }
     html.light .border-\[\#444444\],
+    html.light .border-\[\#48566a\],
     html.light .border-\[\#444\]    { border-color: var(--c-border2) !important; }
     html.light .border-\[\#555\]    { border-color: #aaa !important; }
     html.light .text-white          { color: var(--c-text) !important; }
@@ -77,8 +123,8 @@
     html.light [data-id]            { color: #333333 !important; }
     #marquee {
       position: absolute;
-      border: 2px dashed #13d38e;
-      background: rgba(19,211,142,0.08);
+      border: 2px dashed var(--acc);
+      background: rgba(19,211,137,0.08);
       pointer-events: none;
       z-index: 1000;
     }
@@ -99,9 +145,9 @@
     /* Phase 3A: snap-active style */
     #btn-snap.snap-active,
     .snap-active {
-      background: #13d38e !important;
+      background: var(--acc) !important;
       color: #000 !important;
-      border-color: #13d38e !important;
+      border-color: var(--acc) !important;
     }
     #preview-modal {
       display: none;
@@ -142,7 +188,7 @@
       left: 0;
       right: 0;
       z-index: 50000;
-      background: #ca8a04;
+      background: var(--ack-color);
       color: #000;
       padding: 8px 16px;
       align-items: center;
@@ -150,17 +196,17 @@
       font-size: 13px;
       font-weight: 500;
     }
-    .state-OK       { background: #16a34a; color: #fff; }
-    .state-WARNING  { background: #ca8a04; color: #fff; }
-    .state-CRITICAL { background: #dc2626; color: #fff; }
-    .state-UNKNOWN  { background: #6b7280; color: #fff; }
+    .state-OK       { background: var(--ok);   color: #000; }
+    .state-WARNING  { background: var(--warn); color: #000; }
+    .state-CRITICAL { background: var(--crit); color: #fff; }
+    .state-UNKNOWN  { background: var(--unkn); color: #fff; }
 
     /* ── Port-Dots ─────────────────────────────────────────────────────── */
     .port-dot {
       position: absolute;
       width: 10px; height: 10px;
-      background: #13d38e;
-      border: 2px solid #1a1a1a;
+      background: var(--acc);
+      border: 2px solid var(--c-canvas-bg);
       border-radius: 50%;
       opacity: 0;
       transition: opacity 0.12s;
@@ -180,7 +226,7 @@
       display: none;
       position: fixed;
       bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: #13d38e; color: #000;
+      background: var(--acc); color: #000;
       font-size: 12px; font-weight: 600;
       padding: 7px 18px; border-radius: 20px;
       box-shadow: 0 4px 20px rgba(0,0,0,.5);
@@ -189,12 +235,34 @@
       white-space: nowrap;
     }
     #connect-tooltip.visible { display: block; }
+
+    /* ── Initially-hidden elements ─────────────────────────────────────── */
+    #username-banner, #btn-admin, #btn-change-password, #btn-logout { display: none; }
+
+    /* ── Layout-Direction Dropdown ──────────────────────────────────────── */
+    #layout-dropdown {
+      display: none; position: absolute;
+      top: calc(100% + 4px); left: 0; z-index: 9999;
+      background: #242424; border: 1px solid #3a3a3a; border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.5);
+      padding: 4px 0; min-width: 160px;
+    }
+    .dropdown-divider { height: 1px; background: #3a3a3a; margin: 4px 0; }
+
+    /* ── Context Menu ───────────────────────────────────────────────────── */
+    #ctx-menu {
+      display: none; position: fixed; z-index: 99999;
+      background: #242424; border: 1px solid #3a3a3a; border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.6);
+      padding: 4px 0; min-width: 200px;
+      font-size: 13px; color: #e5e7eb;
+    }
   </style>
 </head>
-<body class="bg-[#1a1a1a] text-gray-100 h-screen flex flex-col overflow-hidden font-sans">
+<body class="bg-[#1c2228] text-gray-100 h-screen flex flex-col overflow-hidden">
 
   <!-- Auth: Username Banner (legacy, hidden by default) -->
-  <div id="username-banner" style="display:none;"></div>
+  <div id="username-banner"></div>
 
   <!-- Toolbar -->
   <header class="bg-[#1e1e1e] border-b border-[#3a3a3a] h-12 flex items-center px-4 relative z-10">
@@ -266,16 +334,14 @@
           class="bg-[#2b2b2b] border border-[#444444] border-l-0 rounded-r px-2 h-9 flex items-center hover:bg-[#3a3a3a] transition">
           <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
         </button>
-        <div id="layout-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:9999;
-          background:#242424;border:1px solid #3a3a3a;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.5);
-          padding:4px 0;min-width:160px;">
+        <div id="layout-dropdown">
           <button data-dir="TB" class="layout-dir-btn w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-[#333]">
             <i data-lucide="arrow-down" class="w-4 h-4 text-[#13d38e]"></i> Top → Bottom
           </button>
           <button data-dir="LR" class="layout-dir-btn w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-[#333]">
             <i data-lucide="arrow-right" class="w-4 h-4 text-[#13d38e]"></i> Left → Right
           </button>
-          <div style="height:1px;background:#3a3a3a;margin:4px 0;"></div>
+          <div class="dropdown-divider"></div>
           <button data-dir="GRID" class="layout-dir-btn w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-[#333]">
             <i data-lucide="grid" class="w-4 h-4 text-[#13d38e]"></i> Am Raster ausrichten
           </button>
@@ -320,7 +386,7 @@
       <div class="w-px h-6 bg-[#444444]"></div>
 
       <!-- Admin Button (nur für Admins sichtbar) -->
-      <button id="btn-admin" title="Benutzerverwaltung" style="display:none;"
+      <button id="btn-admin" title="Benutzerverwaltung"
         class="bg-[#2b2b2b] border border-[#444444] rounded w-9 h-9 flex items-center justify-center hover:bg-[#3a3a3a] transition">
         <i data-lucide="shield" class="w-4 h-4 text-[#13d38e]"></i>
       </button>
@@ -334,13 +400,13 @@
       </div>
 
       <!-- Passwort ändern -->
-      <button id="btn-change-password" title="Passwort ändern" style="display:none;"
+      <button id="btn-change-password" title="Passwort ändern"
         class="bg-[#2b2b2b] border border-[#444444] rounded w-9 h-9 flex items-center justify-center hover:bg-[#3a3a3a] transition">
         <i data-lucide="key-round" class="w-4 h-4 text-gray-400"></i>
       </button>
 
       <!-- Logout Button -->
-      <button id="btn-logout" title="Abmelden" style="display:none;"
+      <button id="btn-logout" title="Abmelden"
         class="bg-[#2b2b2b] border border-[#444444] rounded w-9 h-9 flex items-center justify-center hover:bg-[#3a3a3a] transition">
         <i data-lucide="log-out" class="w-4 h-4 text-gray-400"></i>
       </button>
@@ -529,12 +595,7 @@
   </div>
 
   <!-- Context Menu -->
-  <div id="ctx-menu" style="
-    display:none; position:fixed; z-index:99999;
-    background:#242424; border:1px solid #3a3a3a; border-radius:8px;
-    box-shadow:0 8px 32px rgba(0,0,0,.6); padding:4px 0; min-width:200px;
-    font-size:13px; color:#e5e7eb;">
-  </div>
+  <div id="ctx-menu"></div>
 
   <!-- Connect-Modus Tooltip -->
   <div id="connect-tooltip">Ziel-Port oder -Node anklicken &nbsp;|&nbsp; Rechtsklick = Abbrechen</div>
