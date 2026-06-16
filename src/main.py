@@ -1,20 +1,27 @@
-import os
 import json
-import httpx
-from pathlib import Path
+import os
+import time
 from collections import defaultdict, deque
-from typing import List, Dict, Any, Optional
+from pathlib import Path
+from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query, Depends
+import httpx
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from user_store  import UserStore
 from auth_manager import (
-    create_token, auth_ldap, auth_checkmk,
-    require_auth, require_admin,
-    AUTH_ENABLED, LDAP_URL, CMK_URL,
+    AUTH_ENABLED,
+    CMK_URL,
+    CMK_VERIFY,
+    LDAP_URL,
+    auth_checkmk,
+    auth_ldap,
+    create_token,
+    require_admin,
+    require_auth,
 )
+from user_store import UserStore
 
 app = FastAPI(title="UI4BI Backend", version="1.0")
 
@@ -32,9 +39,9 @@ _users = UserStore()
 
 # ── Modelle ───────────────────────────────────────────────────────────────
 class Graph(BaseModel):
-    nodes: List[Dict[str, Any]]
-    edges: List[Dict[str, Any]]
-    pack:  Optional[Dict[str, Any]] = None
+    nodes: list[dict[str, Any]]
+    edges: list[dict[str, Any]]
+    pack:  dict[str, Any] | None = None
 
 class LoginRequest(BaseModel):
     username: str
@@ -48,21 +55,47 @@ class UserCreate(BaseModel):
     email:     str = ""
 
 class UserUpdate(BaseModel):
-    password:  Optional[str] = None
-    role:      Optional[str] = None
-    email:     Optional[str] = None
-    active:    Optional[bool] = None
+    password:  str | None = None
+    role:      str | None = None
+    email:     str | None = None
+    active:    bool | None = None
+
+
+# ── Login Rate-Limiting (in-memory, pro IP+Benutzername) ────────────────────
+LOGIN_MAX_ATTEMPTS   = int(os.getenv("LOGIN_MAX_ATTEMPTS", "5"))
+LOGIN_WINDOW_SECONDS = int(os.getenv("LOGIN_WINDOW_SECONDS", "60"))
+_login_failures: dict[str, list[float]] = defaultdict(list)
+
+def _login_rate_key(request: Request, username: str) -> str:
+    ip = request.client.host if request.client else "unknown"
+    return f"{ip}:{username}"
+
+def _check_login_rate_limit(key: str) -> None:
+    now = time.monotonic()
+    attempts = [t for t in _login_failures[key] if now - t < LOGIN_WINDOW_SECONDS]
+    _login_failures[key] = attempts
+    if len(attempts) >= LOGIN_MAX_ATTEMPTS:
+        raise HTTPException(429, "Zu viele Fehlversuche – bitte später erneut versuchen")
+
+def _record_login_failure(key: str) -> None:
+    _login_failures[key].append(time.monotonic())
+
+def _clear_login_failures(key: str) -> None:
+    _login_failures.pop(key, None)
 
 
 # ── Auth: Login ───────────────────────────────────────────────────────────
 @app.post("/login")
-def login(body: LoginRequest):
+def login(body: LoginRequest, request: Request):
     """
     Versucht in dieser Reihenfolge:
       1. Lokale Benutzerdatenbank
       2. LDAP (wenn CMK_URL konfiguriert)
       3. Checkmk REST API (wenn CMK_URL konfiguriert)
     """
+    rate_key = _login_rate_key(request, body.username)
+    _check_login_rate_limit(rate_key)
+
     user = None
 
     # 1. Lokale Auth
@@ -99,10 +132,13 @@ def login(body: LoginRequest):
                 )
 
     if not user:
+        _record_login_failure(rate_key)
         raise HTTPException(401, "Benutzername oder Passwort falsch")
     if not user.get("active", True):  # pragma: no cover  – nur via LDAP/CMK erreichbar
+        _record_login_failure(rate_key)
         raise HTTPException(403, "Benutzer ist deaktiviert")
 
+    _clear_login_failures(rate_key)
     _users.touch_login(user["id"])
     token = create_token(user)
     return {"token": token, "user": UserStore.safe(user)}
@@ -203,7 +239,7 @@ def load_graph(_: dict = Depends(require_auth)):
 @app.post("/validate")
 def validate_graph(graph: Graph, _: dict = Depends(require_auth)):
     adj      = defaultdict(list)
-    indegree: Dict[Any, int] = defaultdict(int)
+    indegree: dict[Any, int] = defaultdict(int)
     node_ids = {n["id"] for n in graph.nodes}
     for e in graph.edges:
         if e["from"] not in node_ids or e["to"] not in node_ids:
@@ -225,7 +261,7 @@ def validate_graph(graph: Graph, _: dict = Depends(require_auth)):
 
 
 # ── Audit-Log ─────────────────────────────────────────────────────────────
-audit_entries: List[Dict[str, Any]] = []
+audit_entries: list[dict[str, Any]] = []
 
 @app.post("/audit")
 def post_audit(entry: dict, _: dict = Depends(require_auth)):
@@ -257,7 +293,7 @@ def cmk_status(_: dict = Depends(require_auth)):
                 "hint": "CMK_URL und CMK_SECRET in .env setzen"}
     try:
         r = httpx.get(f"{CMK_URL}/check_mk/api/1.0/version",
-                      headers=_cmk_headers(), timeout=5, verify=False)
+                      headers=_cmk_headers(), timeout=5, verify=CMK_VERIFY)
         return {"configured": True, "reachable": r.status_code == 200,
                 "cmk_version": r.json().get("versions", {}).get("checkmk", "?")}
     except Exception as e:
@@ -265,13 +301,13 @@ def cmk_status(_: dict = Depends(require_auth)):
 
 
 @app.get("/cmk/hosts")
-def get_hosts(search: Optional[str] = Query(None), _: dict = Depends(require_auth)):
+def get_hosts(search: str | None = Query(None), _: dict = Depends(require_auth)):
     if not _cmk_available():
         return {"items": _MOCK_HOSTS, "source": "mock"}
     try:
         r = httpx.get(
             f"{CMK_URL}/check_mk/api/1.0/domain-types/host_config/collections/all",
-            headers=_cmk_headers(), params={"columns": ["name"]}, timeout=10, verify=False,
+            headers=_cmk_headers(), params={"columns": ["name"]}, timeout=10, verify=CMK_VERIFY,
         )
         r.raise_for_status()
         hosts = [h["id"] for h in r.json().get("value", [])]
@@ -283,13 +319,13 @@ def get_hosts(search: Optional[str] = Query(None), _: dict = Depends(require_aut
 
 
 @app.get("/cmk/services")
-def get_services(search: Optional[str] = Query(None), _: dict = Depends(require_auth)):
+def get_services(search: str | None = Query(None), _: dict = Depends(require_auth)):
     if not _cmk_available():
         return {"items": _MOCK_SERVICES, "source": "mock"}
     try:
         r = httpx.get(
             f"{CMK_URL}/check_mk/api/1.0/domain-types/service/collections/all",
-            headers=_cmk_headers(), params={"columns": ["description"]}, timeout=10, verify=False,
+            headers=_cmk_headers(), params={"columns": ["description"]}, timeout=10, verify=CMK_VERIFY,
         )
         r.raise_for_status()
         svcs = sorted({s["extensions"]["description"] for s in r.json().get("value", [])})
@@ -301,13 +337,13 @@ def get_services(search: Optional[str] = Query(None), _: dict = Depends(require_
 
 
 @app.get("/cmk/hostgroups")
-def get_hostgroups(search: Optional[str] = Query(None), _: dict = Depends(require_auth)):
+def get_hostgroups(search: str | None = Query(None), _: dict = Depends(require_auth)):
     if not _cmk_available():
         return {"items": _MOCK_HOSTGROUPS, "source": "mock"}
     try:
         r = httpx.get(
             f"{CMK_URL}/check_mk/api/1.0/domain-types/host_group_config/collections/all",
-            headers=_cmk_headers(), timeout=10, verify=False,
+            headers=_cmk_headers(), timeout=10, verify=CMK_VERIFY,
         )
         r.raise_for_status()
         groups = [g["id"] for g in r.json().get("value", [])]
@@ -319,13 +355,13 @@ def get_hostgroups(search: Optional[str] = Query(None), _: dict = Depends(requir
 
 
 @app.get("/cmk/servicegroups")
-def get_servicegroups(search: Optional[str] = Query(None), _: dict = Depends(require_auth)):
+def get_servicegroups(search: str | None = Query(None), _: dict = Depends(require_auth)):
     if not _cmk_available():
         return {"items": _MOCK_SERVICEGROUPS, "source": "mock"}
     try:
         r = httpx.get(
             f"{CMK_URL}/check_mk/api/1.0/domain-types/service_group_config/collections/all",
-            headers=_cmk_headers(), timeout=10, verify=False,
+            headers=_cmk_headers(), timeout=10, verify=CMK_VERIFY,
         )
         r.raise_for_status()
         groups = [g["id"] for g in r.json().get("value", [])]
@@ -337,13 +373,13 @@ def get_servicegroups(search: Optional[str] = Query(None), _: dict = Depends(req
 
 
 @app.get("/cmk/bi-packs")
-def get_bi_packs(search: Optional[str] = Query(None), _: dict = Depends(require_auth)):
+def get_bi_packs(search: str | None = Query(None), _: dict = Depends(require_auth)):
     if not _cmk_available():
         return {"items": _MOCK_BI, "source": "mock"}
     try:
         r = httpx.get(
             f"{CMK_URL}/check_mk/api/1.0/domain-types/bi_pack/collections/all",
-            headers=_cmk_headers(), timeout=10, verify=False,
+            headers=_cmk_headers(), timeout=10, verify=CMK_VERIFY,
         )
         r.raise_for_status()
         packs = [p["id"] for p in r.json().get("value", [])]
@@ -351,7 +387,7 @@ def get_bi_packs(search: Optional[str] = Query(None), _: dict = Depends(require_
         for pid in packs:
             try:
                 rr = httpx.get(f"{CMK_URL}/check_mk/api/1.0/objects/bi_pack/{pid}",
-                               headers=_cmk_headers(), timeout=5, verify=False)
+                               headers=_cmk_headers(), timeout=5, verify=CMK_VERIFY)
                 if rr.status_code == 200:
                     rules += [rule["id"] for rule in rr.json().get("rules", [])]
             except Exception:
@@ -369,7 +405,7 @@ def get_bi_pack(pack_id: str, _: dict = Depends(require_auth)):
     if not _cmk_available():
         raise HTTPException(503, "CMK_URL / CMK_SECRET nicht konfiguriert")
     r = httpx.get(f"{CMK_URL}/check_mk/api/1.0/objects/bi_pack/{pack_id}",
-                  headers=_cmk_headers(), timeout=15, verify=False)
+                  headers=_cmk_headers(), timeout=15, verify=CMK_VERIFY)
     if r.status_code == 404:
         raise HTTPException(404, f"BI Pack '{pack_id}' nicht gefunden")
     r.raise_for_status()

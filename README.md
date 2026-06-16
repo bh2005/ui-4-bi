@@ -28,7 +28,7 @@ Grafisches Erstellen, Bearbeiten und Exportieren von Checkmk BI-Regelwerken — 
 | **Rule Packs** | Pack-ID, Titel, Contact-Groups; korrekt beim CMK-Export/Import |
 | **CMK-Integration** | Export + Import als Checkmk BI Pack JSON; alle CMK-Typen; Aggregationsfunktionen |
 | **Preview** | Mock-Vorschau (simulierte States); echter Backend-Aufruf wenn `/bi/preview` verfügbar |
-| **Authentifizierung** | JWT (HS256, 8h); lokal → LDAP → Checkmk Auth-Kette; Admin-UI; `AUTH_ENABLED=false` |
+| **Authentifizierung** | JWT (HS256, 8h); lokal → LDAP → Checkmk Auth-Kette; Admin-UI; `AUTH_ENABLED=false`; Login-Rate-Limiting (5 Versuche/60s pro IP+Benutzername) |
 | **Audit-Log** | In-Memory + localStorage; CSV-Export; Suche + Filter |
 | **Performance** | RAF-Throttling; Viewport-Culling; DOM-Pooling; getestet bis 2k Nodes |
 | **Dark / Light Theme** | Persistent; WCAG-AA-Kontrast im Light-Mode |
@@ -76,7 +76,10 @@ docker compose up --build
 | `LDAP_USER_BASE` | — | z. B. `ou=users,dc=example,dc=com` |
 | `LDAP_ADMIN_GROUP` | — | DN der Admin-Gruppe |
 | `CMK_URL` | — | Checkmk-URL für CMK-Auth |
+| `CMK_SSL_VERIFY` | `false` | TLS-Zertifikatsprüfung für Checkmk-REST-Aufrufe (`true` für Produktivbetrieb mit gültigem Zertifikat empfohlen) |
 | `JWT_EXPIRE_MINUTES` | `480` | Token-Laufzeit (Minuten) |
+| `LOGIN_MAX_ATTEMPTS` | `5` | Max. Fehlversuche pro IP+Benutzername im Zeitfenster, danach HTTP 429 |
+| `LOGIN_WINDOW_SECONDS` | `60` | Zeitfenster (Sekunden) für das Login-Rate-Limiting |
 
 ---
 

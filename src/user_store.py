@@ -2,10 +2,14 @@
 Lokale Benutzerverwaltung – speichert Benutzer in data/users.json.
 Beim ersten Start wird ein Admin-Benutzer (admin/admin) angelegt.
 """
-import os, json, uuid, hashlib, hmac, secrets
+import hashlib
+import hmac
+import json
+import os
+import secrets
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
-from typing import Optional
 
 USERS_FILE = Path(os.getenv("USERS_FILE", "data/users.json"))
 
@@ -41,7 +45,7 @@ class UserStore:
             "role":          "admin",
             "auth_type":     "local",
             "email":         "",
-            "created_at":    datetime.now(timezone.utc).isoformat(),
+            "created_at":    datetime.now(UTC).isoformat(),
             "last_login":    None,
             "active":        True,
         }
@@ -59,10 +63,10 @@ class UserStore:
     def get_all(self) -> list:
         return self._load()
 
-    def get_by_id(self, user_id: str) -> Optional[dict]:
+    def get_by_id(self, user_id: str) -> dict | None:
         return next((u for u in self._load() if u["id"] == user_id), None)
 
-    def get_by_username(self, username: str) -> Optional[dict]:
+    def get_by_username(self, username: str) -> dict | None:
         return next((u for u in self._load() if u["username"] == username), None)
 
     def count(self) -> int:
@@ -71,7 +75,7 @@ class UserStore:
     # ── Schreiben ──────────────────────────────────────────────────────────
     def create(self, username: str, password: str = "",
                role: str = "user", auth_type: str = "local",
-               email: str = "") -> tuple[Optional[dict], Optional[str]]:
+               email: str = "") -> tuple[dict | None, str | None]:
         users = self._load()
         if any(u["username"] == username for u in users):
             return None, "Benutzername bereits vergeben"
@@ -82,7 +86,7 @@ class UserStore:
             "role":          role,
             "auth_type":     auth_type,
             "email":         email,
-            "created_at":    datetime.now(timezone.utc).isoformat(),
+            "created_at":    datetime.now(UTC).isoformat(),
             "last_login":    None,
             "active":        True,
         }
@@ -90,7 +94,7 @@ class UserStore:
         self._save(users)
         return user, None
 
-    def update(self, user_id: str, **kwargs) -> Optional[dict]:
+    def update(self, user_id: str, **kwargs) -> dict | None:
         users = self._load()
         for u in users:
             if u["id"] == user_id:
@@ -108,10 +112,10 @@ class UserStore:
         self._save(users)
 
     def touch_login(self, user_id: str):
-        self.update(user_id, last_login=datetime.now(timezone.utc).isoformat())
+        self.update(user_id, last_login=datetime.now(UTC).isoformat())
 
     # ── Authentifizierung ──────────────────────────────────────────────────
-    def verify_local(self, username: str, password: str) -> Optional[dict]:
+    def verify_local(self, username: str, password: str) -> dict | None:
         u = self.get_by_username(username)
         if not u or u.get("auth_type") != "local" or not u.get("active", True):
             return None

@@ -6,13 +6,14 @@ Authentifizierungs-Manager:
   - Checkmk Auth (REST API)
   - FastAPI-Dependencies: require_auth, require_admin
 """
-import os, secrets, httpx
+import os
+import secrets
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from datetime import datetime, timedelta, timezone
-from typing import Optional
 
-import jwt                      # PyJWT
-from fastapi import Request, HTTPException
+import httpx
+import jwt  # PyJWT
+from fastapi import HTTPException, Request
 
 # ── JWT-Secret (persistent in data/.jwt_secret) ───────────────────────────
 _SECRET_FILE = Path(os.getenv("SAVE_FILE", "data/saved_graph.json")).parent / ".jwt_secret"
@@ -49,12 +50,12 @@ def create_token(user: dict) -> str:
         "id":        user.get("id", user["username"]),
         "role":      user.get("role", "user"),
         "auth_type": user.get("auth_type", "local"),
-        "exp":       datetime.now(timezone.utc) + timedelta(minutes=EXPIRE_MINUTES),
+        "exp":       datetime.now(UTC) + timedelta(minutes=EXPIRE_MINUTES),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=ALGORITHM)
 
 
-def decode_token(token: str) -> Optional[dict]:
+def decode_token(token: str) -> dict | None:
     try:
         return jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
     except Exception:
@@ -62,11 +63,11 @@ def decode_token(token: str) -> Optional[dict]:
 
 
 # ── LDAP ──────────────────────────────────────────────────────────────────
-def auth_ldap(username: str, password: str) -> Optional[dict]:  # pragma: no cover
+def auth_ldap(username: str, password: str) -> dict | None:  # pragma: no cover
     if not LDAP_URL or not LDAP_USER_BASE:
         return None
     try:
-        from ldap3 import Server, Connection, ALL, SUBTREE
+        from ldap3 import ALL, SUBTREE, Connection, Server
         server = Server(LDAP_URL, get_info=ALL)
         # Bind mit Service-Account um User-DN zu finden
         bind_conn = Connection(server, LDAP_BIND_DN, LDAP_BIND_PW, auto_bind=True)
@@ -95,12 +96,12 @@ def auth_ldap(username: str, password: str) -> Optional[dict]:  # pragma: no cov
             "auth_type": "ldap",
             "email":     email,
         }
-    except Exception as e:
+    except Exception:
         return None
 
 
 # ── Checkmk ───────────────────────────────────────────────────────────────
-def auth_checkmk(username: str, password: str) -> Optional[dict]:  # pragma: no cover
+def auth_checkmk(username: str, password: str) -> dict | None:  # pragma: no cover
     if not CMK_URL:
         return None
     try:
@@ -142,7 +143,7 @@ def auth_checkmk(username: str, password: str) -> Optional[dict]:  # pragma: no 
 
 
 # ── FastAPI Dependencies ──────────────────────────────────────────────────
-def _extract_token(request: Request) -> Optional[str]:
+def _extract_token(request: Request) -> str | None:
     auth = request.headers.get("Authorization", "")
     if auth.startswith("Bearer "):
         return auth[7:]

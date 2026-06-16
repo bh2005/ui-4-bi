@@ -1,6 +1,6 @@
 # To-Do – CMK BI Visual Editor
 
-> Stand: 2026-04-06 | Ziel-MVP: Ende April / Mitte Mai 2026
+> Stand: 2026-04-23 | Ziel-MVP: Ende April / Mitte Mai 2026
 
 ---
 
@@ -8,6 +8,8 @@
 
 - [ ] **LDAP testen** — Integration mit echtem AD testen (LDAP_URL, LDAP_BIND_DN, LDAP_USER_BASE, LDAP_ADMIN_GROUP)
 - [ ] **Checkmk-Auth testen** — Login via CMK REST API verifizieren
+- [x] **CMK-SSL-Verify konfigurierbar** — `verify=False` bei allen CMK-REST-Aufrufen durch `CMK_SSL_VERIFY`-Env-Var ersetzt (Default weiterhin `false`, `true` für Produktivbetrieb empfohlen) ✅ (2026-04-23)
+- [x] **Login-Rate-Limiting** — max. `LOGIN_MAX_ATTEMPTS` (Default 5) Fehlversuche pro IP+Benutzername innerhalb `LOGIN_WINDOW_SECONDS` (Default 60s), danach HTTP 429; In-Memory-Zähler in `src/main.py` ✅ (2026-04-23)
 
 ## Offen – Phase 2 (CMK-Integration)
 
